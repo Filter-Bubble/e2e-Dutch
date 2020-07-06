@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from . import metrics
 from . import conll
 from . import coref_ops
@@ -6,8 +5,6 @@ from . import util
 import logging
 import h5py
 import tensorflow_hub as hub
-from __future__ import division
-from __future__ import print_function
 
 import os
 import sys

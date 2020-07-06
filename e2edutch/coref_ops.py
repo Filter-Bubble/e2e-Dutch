@@ -1,7 +1,5 @@
-from __future__ import absolute_import
 from tensorflow.python import pywrap_tensorflow
-from __future__ import division
-from __future__ import print_function
+
 
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()

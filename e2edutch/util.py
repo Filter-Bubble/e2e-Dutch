@@ -1,9 +1,5 @@
-from __future__ import absolute_import
-import pyhocon
-from __future__ import division
-from __future__ import print_function
-
 import os
+import pyhocon
 import errno
 import codecs
 import collections

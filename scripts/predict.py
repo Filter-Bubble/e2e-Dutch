@@ -1,10 +1,7 @@
-from __future__ import absolute_import
 from e2edutch import conll
 from e2edutch import minimize
 from e2edutch import util
 from e2edutch import coref_model as cm
-from __future__ import division
-from __future__ import print_function
 
 import sys
 import json
