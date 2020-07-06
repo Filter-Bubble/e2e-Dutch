@@ -9,9 +9,10 @@ import json
 import tempfile
 import subprocess
 import collections
+import logging
 
-from . import util
-from . import conll
+from e2edutch import util
+from e2edutch import conll
 
 
 class DocumentState(object):
@@ -123,7 +124,7 @@ def handle_bit(word_index, bit, stack, spans):
         spans[current_span] = label
 
 
-def handle_line(line, document_state, labels, stats):
+def handle_line(line, document_state, labels, stats, word_col):
     begin_document_match = re.match(conll.BEGIN_DOCUMENT_REGEX, line)
     if begin_document_match:
         document_state.assert_empty()
@@ -163,7 +164,7 @@ def handle_line(line, document_state, labels, stats):
         assert len(row) >= 4
 
         #doc_key = conll.get_doc_key(row[0], 0) # TODO: use part?
-        word = normalize_word(row[3])
+        word = normalize_word(row[word_col])
         speaker = 'UNKNOWN'
         coref = row[-1]
 
@@ -191,32 +192,27 @@ def handle_line(line, document_state, labels, stats):
         return None
 
 
-def minimize_partition(input_path, labels, stats):
+def minimize_partition(input_path, labels, stats, word_col):
     with open(input_path, "r") as input_file:
         document_state = DocumentState()
         for line in input_file.readlines():
-            document = handle_line(line, document_state, labels, stats)
+            document = handle_line(line, document_state, labels, stats, word_col)
             if document is not None:
                 yield document
                 document_state = DocumentState()
 
 
-def minimize_partition_file(input_path, labels, stats):
+def minimize_partition_file(input_path, labels, stats, word_col):
     output_path = "{}.jsonlines".format(os.path.splitext(input_path)[0])
     count = 0
-    print("Minimizing {}".format(input_path))
-    with open(input_path, "r") as input_file:
-        with open(output_path, "w") as output_file:
-            document_state = DocumentState()
-            for line in input_file.readlines():
-                document = handle_line(
-                    line, document_state, labels, stats)
-                if document is not None:
-                    output_file.write(json.dumps(document))
-                    output_file.write("\n")
-                    count += 1
-                    document_state = DocumentState()
-    print("Wrote {} documents to {}".format(count, output_path))
+    logging.info("Minimizing {}".format(input_path))
+
+    with open(output_path, "w") as output_file:
+        for document in minimize_partition(input_path, labels, stats, word_col):
+            output_file.write(json.dumps(document))
+            output_file.write("\n")
+            count += 1
+    logging.info("Wrote {} documents to {}".format(count, output_path))
 
 
 if __name__ == "__main__":
@@ -224,9 +220,10 @@ if __name__ == "__main__":
         sys.exit(
             "Usage: {} input file".format(sys.argv[0]))
     input_path = sys.argv[1]
+    word_col = 2
     labels = collections.defaultdict(set)
     stats = collections.defaultdict(int)
-    minimize_partition_file(input_path, labels, stats)
+    minimize_partition_file(input_path, labels, stats, word_col)
     for k, v in labels.items():
         print("{} = [{}]".format(k, ", ".join(
             "\"{}\"".format(label) for label in v)))

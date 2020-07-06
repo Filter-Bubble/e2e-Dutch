@@ -21,7 +21,7 @@ def get_doc_key(doc_id, part):
     #return "{}_{}".format(doc_id, int(part))
 
 
-def output_conll(input_file, output_file, predictions):
+def get_prediction_map(predictions):
     prediction_map = {}
     for doc_key, clusters in predictions.items():
         start_map = collections.defaultdict(list)
@@ -41,6 +41,37 @@ def output_conll(input_file, output_file, predictions):
             end_map[k] = [cluster_id for cluster_id, start in sorted(
                 v, key=operator.itemgetter(1), reverse=True)]
         prediction_map[doc_key] = (start_map, end_map, word_map)
+    return prediction_map
+
+
+def output_conll(output_file, sentences, predictions):
+    prediction_map = get_prediction_map(predictions)
+    for doc_key in prediction_map:
+        start_map, end_map, word_map = prediction_map[doc_key]
+        output_file.write("#begin document ({}); part 000\n\n".format(doc_key))
+        word_index = 0
+        for sent in sentences[doc_key]:
+            for i, word in enumerate(sent):
+                coref_list = []
+                if word_index in end_map:
+                    for cluster_id in end_map[word_index]:
+                        coref_list.append("{})".format(cluster_id))
+                if word_index in word_map:
+                    for cluster_id in word_map[word_index]:
+                        coref_list.append("({})".format(cluster_id))
+                if word_index in start_map:
+                    for cluster_id in start_map[word_index]:
+                        coref_list.append("({}".format(cluster_id))
+                coref = '-' if len(coref_list)==0 else "|".join(coref_list)
+                line = '\t'.join([doc_key, str(i), word, coref])
+                output_file.write(line+'\n')
+                word_index += 1
+            output_file.write('\n')
+        output_file.write('#end document\n')
+
+
+def output_conll_align(input_file, output_file, predictions):
+    prediction_map = get_prediction_map(predictions)
 
     word_index = 0
     for line in input_file.readlines():
@@ -103,6 +134,6 @@ def official_conll_eval(gold_path, predicted_path, metric, official_stdout=False
 def evaluate_conll(gold_path, predictions, official_stdout=False):
     with tempfile.NamedTemporaryFile(delete=False, mode="w") as prediction_file:
         with open(gold_path, "r") as gold_file:
-            output_conll(gold_file, prediction_file, predictions)
+            output_conll_align(gold_file, prediction_file, predictions)
         print("Predicted conll file: {}".format(prediction_file.name))
     return {m: official_conll_eval(gold_file.name, prediction_file.name, m, official_stdout) for m in ("muc", "bcub", "ceafe")}

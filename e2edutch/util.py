@@ -10,6 +10,7 @@ import json
 import math
 import shutil
 import sys
+import logging
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -24,12 +25,12 @@ def initialize_from_env(name):
         set_gpus()
 
 
-    print("Running experiment: {}".format(name))
+    logging.info("Running experiment: {}".format(name))
 
     config = pyhocon.ConfigFactory.parse_file("./cfg/experiments.conf")[name]
     config["log_dir"] = mkdirs(os.path.join(config["log_root"], name))
 
-    print(pyhocon.HOCONConverter.convert(config, "hocon"))
+    logging.info(pyhocon.HOCONConverter.convert(config, "hocon"))
     return config
 
 
@@ -48,7 +49,7 @@ def flatten(l):
 
 def set_gpus(*gpus):
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(g) for g in gpus)
-    print("Setting CUDA_VISIBLE_DEVICES to: {}".format(
+    logging.info("Setting CUDA_VISIBLE_DEVICES to: {}".format(
         os.environ["CUDA_VISIBLE_DEVICES"]))
     for gpu in tf.config.experimental.list_physical_devices('GPU'):
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -209,7 +210,7 @@ class EmbeddingDictionary(object):
         return self._size
 
     def load_embedding_dict(self, path):
-        print("Loading word embeddings from {}...".format(path))
+        logging.info("Loading word embeddings from {}...".format(path))
         default_embedding = np.zeros(self.size)
         embedding_dict = collections.defaultdict(lambda: default_embedding)
         if len(path) > 0:
@@ -224,7 +225,7 @@ class EmbeddingDictionary(object):
                     embedding_dict[word] = embedding
             if vocab_size is not None:
                 assert vocab_size == len(embedding_dict)
-            print("Done loading word embeddings.")
+            logging.info("Done loading word embeddings.")
         return embedding_dict
 
     def __getitem__(self, key):

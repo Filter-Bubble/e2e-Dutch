@@ -14,6 +14,7 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import tensorflow_hub as hub
 import h5py
+import logging
 
 from . import util
 from . import coref_ops
@@ -111,7 +112,7 @@ class CorefModel(object):
         saver = tf.train.Saver(vars_to_restore)
         checkpoint_path = os.path.join(
             self.config["log_dir"], "model.max.ckpt")
-        print("Restoring from {}".format(checkpoint_path))
+        logging.info("Restoring from {}".format(checkpoint_path))
         session.run(tf.global_variables_initializer())
         saver.restore(session, checkpoint_path)
 
@@ -716,7 +717,7 @@ class CorefModel(object):
                 self.eval_data = [load_line(l) for l in f.readlines()]
             num_words = sum(tensorized_example[2].sum()
                             for tensorized_example, _ in self.eval_data)
-            print("Loaded {} eval examples.".format(len(self.eval_data)))
+            logging.info("Loaded {} eval examples.".format(len(self.eval_data)))
 
     def evaluate(self, session, official_stdout=False, include_singletons=False):
         self.load_eval_data()
@@ -735,7 +736,7 @@ class CorefModel(object):
             coref_predictions[example["doc_key"]] = self.evaluate_coref(
                 top_span_starts, top_span_ends, predicted_antecedents, example["clusters"], coref_evaluator, include_singletons=include_singletons)
             if example_num % 10 == 0:
-                print("Evaluated {}/{} examples.".format(example_num +
+                logging.info("Evaluated {}/{} examples.".format(example_num +
                                                          1, len(self.eval_data)))
 
         summary_dict = {}
@@ -744,14 +745,14 @@ class CorefModel(object):
         average_f1 = sum(
             results["f"] for results in conll_results.values()) / len(conll_results)
         summary_dict["Average F1 (conll)"] = average_f1
-        print("Average F1 (conll): {:.2f}%".format(average_f1))
+        logging.info("Average F1 (conll): {:.2f}%".format(average_f1))
 
         p, r, f = coref_evaluator.get_prf()
         summary_dict["Average F1 (py)"] = f
-        print("Average F1 (py): {:.2f}%".format(f * 100))
+        logging.info("Average F1 (py): {:.2f}%".format(f * 100))
         summary_dict["Average precision (py)"] = p
-        print("Average precision (py): {:.2f}%".format(p * 100))
+        logging.info("Average precision (py): {:.2f}%".format(p * 100))
         summary_dict["Average recall (py)"] = r
-        print("Average recall (py): {:.2f}%".format(r * 100))
+        logging.info("Average recall (py): {:.2f}%".format(r * 100))
 
         return util.make_summary(summary_dict), average_f1
