@@ -1,20 +1,27 @@
 #!/usr/bin/env python
 from __future__ import absolute_import
+import util
+import coref_model as cm
 from __future__ import division
 from __future__ import print_function
 
 import os
 import sys
 import time
+import argparse
 
 #import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-import coref_model as cm
-import util
 
-if __name__ == "__main__":
-    config = util.initialize_from_env(sys.argv[1])
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('config')
+    return parser
+
+def main(args=None):
+    args = get_parser().parse_args()
+    config = util.initialize_from_env(args.config)
 
     report_frequency = config["report_frequency"]
     eval_frequency = config["eval_frequency"]
@@ -70,3 +77,6 @@ if __name__ == "__main__":
 
                 print("[{}] evaL_f1={:.2f}, max_f1={:.2f}".format(
                     tf_global_step, eval_f1, max_f1))
+
+if __name__ == "__main__":
+    main()

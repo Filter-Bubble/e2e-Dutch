@@ -18,7 +18,7 @@ COREF_RESULTS_REGEX = re.compile(
 
 def get_doc_key(doc_id, part):
     return doc_id
-    #return "{}_{}".format(doc_id, int(part))
+    # return "{}_{}".format(doc_id, int(part))
 
 
 def get_prediction_map(predictions):
@@ -62,7 +62,7 @@ def output_conll(output_file, sentences, predictions):
                 if word_index in start_map:
                     for cluster_id in start_map[word_index]:
                         coref_list.append("({}".format(cluster_id))
-                coref = '-' if len(coref_list)==0 else "|".join(coref_list)
+                coref = '-' if len(coref_list) == 0 else "|".join(coref_list)
                 line = '\t'.join([doc_key, str(i), word, coref])
                 output_file.write(line+'\n')
                 word_index += 1

@@ -131,7 +131,7 @@ def handle_line(line, document_state, labels, stats, word_col):
         document_state.doc_key = begin_document_match.group(1)
         return None
     elif line.startswith("#end document"):
-        if len(document_state.text)>0: # no newline before end document
+        if len(document_state.text) > 0:  # no newline before end document
             stats["max_sent_len"] = max(
                 len(document_state.text), stats["max_sent_len"])
             stats["num_sents"] += 1
@@ -150,7 +150,7 @@ def handle_line(line, document_state, labels, stats, word_col):
         return finalized_state
     else:
         row = line.split()
-        if len(row) == 0 and len(document_state.text)>0:
+        if len(row) == 0 and len(document_state.text) > 0:
             stats["max_sent_len"] = max(
                 len(document_state.text), stats["max_sent_len"])
             stats["num_sents"] += 1
@@ -159,11 +159,11 @@ def handle_line(line, document_state, labels, stats, word_col):
             document_state.speakers.append(tuple(document_state.text_speakers))
             del document_state.text_speakers[:]
             return None
-        elif len(row)==0 and len(document_state.text)==0:
+        elif len(row) == 0 and len(document_state.text) == 0:
             return None
         assert len(row) >= 4
 
-        #doc_key = conll.get_doc_key(row[0], 0) # TODO: use part?
+        # doc_key = conll.get_doc_key(row[0], 0) # TODO: use part?
         word = normalize_word(row[word_col])
         speaker = 'UNKNOWN'
         coref = row[-1]
@@ -196,7 +196,8 @@ def minimize_partition(input_path, labels, stats, word_col):
     with open(input_path, "r") as input_file:
         document_state = DocumentState()
         for line in input_file.readlines():
-            document = handle_line(line, document_state, labels, stats, word_col)
+            document = handle_line(line, document_state,
+                                   labels, stats, word_col)
             if document is not None:
                 yield document
                 document_state = DocumentState()

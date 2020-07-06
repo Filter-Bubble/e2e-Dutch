@@ -1,4 +1,11 @@
 from __future__ import absolute_import
+from . import metrics
+from . import conll
+from . import coref_ops
+from . import util
+import logging
+import h5py
+import tensorflow_hub as hub
 from __future__ import division
 from __future__ import print_function
 
@@ -12,14 +19,6 @@ import threading
 import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-import tensorflow_hub as hub
-import h5py
-import logging
-
-from . import util
-from . import coref_ops
-from . import conll
-from . import metrics
 
 
 class CorefModel(object):
@@ -183,7 +182,8 @@ class CorefModel(object):
         speaker_ids = np.array([speaker_dict[s] for s in speakers])
 
         doc_key = example["doc_key"]
-        genre = self.genres['all'] #doc_key[:2]] TODO extract genres from Dutch?
+        # doc_key[:2]] TODO extract genres from Dutch?
+        genre = self.genres['all']
 
         gold_starts, gold_ends = self.tensorize_mentions(gold_mentions)
 
@@ -351,10 +351,12 @@ class CorefModel(object):
             sentence_indices, text_len_mask)  # [num_words]
         flattened_head_emb = self.flatten_emb_by_sentence(
             head_emb, text_len_mask)  # [num_words]
-        if False: #self.config['use_gold']:
+        if False:  # self.config['use_gold']:
             # Filter on span length, only during training time
-            candidate_mask = tf.less_equal(gold_ends - gold_starts + 1, self.max_span_width)
-            candidate_mask = tf.logical_or(candidate_mask, tf.logical_not(is_training))
+            candidate_mask = tf.less_equal(
+                gold_ends - gold_starts + 1, self.max_span_width)
+            candidate_mask = tf.logical_or(
+                candidate_mask, tf.logical_not(is_training))
             candidate_starts = tf.boolean_mask(gold_starts, candidate_mask)
             candidate_ends = tf.boolean_mask(gold_ends, candidate_mask)
 
@@ -365,10 +367,10 @@ class CorefModel(object):
             candidate_sentence_indices = candidate_start_sentence_indices
         else:
             candidate_starts = tf.tile(tf.expand_dims(tf.range(num_words), 1), [
-                                   1, self.max_span_width])  # [num_words, max_span_width]
+                1, self.max_span_width])  # [num_words, max_span_width]
             candidate_ends = candidate_starts + \
                 tf.expand_dims(tf.range(self.max_span_width),
-                           0)  # [num_words, max_span_width]
+                               0)  # [num_words, max_span_width]
             candidate_start_sentence_indices = tf.gather(
                 flattened_sentence_indices, candidate_starts)  # [num_words, max_span_width]
             candidate_end_sentence_indices = tf.gather(flattened_sentence_indices, tf.minimum(
@@ -395,10 +397,13 @@ class CorefModel(object):
             candidate_mention_scores, 1)  # [k]
 
         if self.config['use_gold']:
-            candidates_spans = tf.stack([candidate_starts, candidate_ends], axis=1)
+            candidates_spans = tf.stack(
+                [candidate_starts, candidate_ends], axis=1)
             gold_spans = tf.stack([gold_starts, gold_ends], axis=1)
-            same_span = tf.equal(tf.expand_dims(gold_spans, 1), tf.expand_dims(candidates_spans, 0))
-            top_span_indices = tf.reduce_any(tf.reduce_all(same_span, axis=2), axis=0)
+            same_span = tf.equal(tf.expand_dims(
+                gold_spans, 1), tf.expand_dims(candidates_spans, 0))
+            top_span_indices = tf.reduce_any(
+                tf.reduce_all(same_span, axis=2), axis=0)
             top_span_indices = tf.squeeze(tf.where(top_span_indices), axis=1)
             k = tf.cast(util.shape(top_span_indices, 0), tf.int32)
 
@@ -490,7 +495,8 @@ class CorefModel(object):
         span_end_emb = tf.gather(context_outputs, span_ends)  # [k, emb]
         span_emb_list.append(span_end_emb)
 
-        span_width = tf.minimum(1 + span_ends - span_starts, self.max_span_width)  # [k]
+        span_width = tf.minimum(
+            1 + span_ends - span_starts, self.max_span_width)  # [k]
 
         if self.config["use_features"]:
             span_width_index = span_width - 1  # [k]
@@ -666,7 +672,7 @@ class CorefModel(object):
         predicted_clusters = []
         for i, predicted_index in enumerate(predicted_antecedents):
             mention = (int(top_span_starts[i]), int(top_span_ends[i]))
-            if predicted_index < 0: # Singleton clusters
+            if predicted_index < 0:  # Singleton clusters
                 if include_singletons:
                     predicted_cluster = len(predicted_clusters)
                     predicted_clusters.append([])
@@ -678,7 +684,7 @@ class CorefModel(object):
                     top_span_ends[predicted_index]))
                 if predicted_antecedent in mention_to_predicted:
                     predicted_cluster = mention_to_predicted[predicted_antecedent]
-                else: # Also add antecedent to cluster
+                else:  # Also add antecedent to cluster
                     predicted_cluster = len(predicted_clusters)
                     predicted_clusters.append([predicted_antecedent])
                     mention_to_predicted[predicted_antecedent] = predicted_cluster
@@ -692,7 +698,6 @@ class CorefModel(object):
             m: predicted_clusters[i] for m, i in mention_to_predicted.items()}
 
         return predicted_clusters, mention_to_predicted
-
 
     def evaluate_coref(self, top_span_starts, top_span_ends, predicted_antecedents, gold_clusters, evaluator, include_singletons=False):
         gold_clusters = [tuple(tuple(m) for m in gc) for gc in gold_clusters]
@@ -717,7 +722,8 @@ class CorefModel(object):
                 self.eval_data = [load_line(l) for l in f.readlines()]
             num_words = sum(tensorized_example[2].sum()
                             for tensorized_example, _ in self.eval_data)
-            logging.info("Loaded {} eval examples.".format(len(self.eval_data)))
+            logging.info("Loaded {} eval examples.".format(
+                len(self.eval_data)))
 
     def evaluate(self, session, official_stdout=False, include_singletons=False):
         self.load_eval_data()
@@ -737,7 +743,7 @@ class CorefModel(object):
                 top_span_starts, top_span_ends, predicted_antecedents, example["clusters"], coref_evaluator, include_singletons=include_singletons)
             if example_num % 10 == 0:
                 logging.info("Evaluated {}/{} examples.".format(example_num +
-                                                         1, len(self.eval_data)))
+                                                                1, len(self.eval_data)))
 
         summary_dict = {}
         conll_results = conll.evaluate_conll(

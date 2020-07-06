@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import pyhocon
 from __future__ import division
 from __future__ import print_function
 
@@ -15,7 +16,6 @@ import logging
 import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-import pyhocon
 
 
 def initialize_from_env(name):
@@ -23,7 +23,6 @@ def initialize_from_env(name):
         set_gpus(int(os.environ["GPU"]))
     else:
         set_gpus()
-
 
     logging.info("Running experiment: {}".format(name))
 

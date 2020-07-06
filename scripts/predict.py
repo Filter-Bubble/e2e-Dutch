@@ -1,4 +1,8 @@
 from __future__ import absolute_import
+from e2edutch import conll
+from e2edutch import minimize
+from e2edutch import util
+from e2edutch import coref_model as cm
 from __future__ import division
 from __future__ import print_function
 
@@ -11,17 +15,16 @@ import logging
 
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-from e2edutch import coref_model as cm
-from e2edutch import util
-from e2edutch import minimize
-from e2edutch import conll
+
 
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('config')
     parser.add_argument('input_filename')
-    parser.add_argument('-o', '--output_file', type=argparse.FileType('w'), default=sys.stdout)
-    parser.add_argument('-f', '--format_out', default='conll', choices=['conll', 'jsonlines'])
+    parser.add_argument('-o', '--output_file',
+                        type=argparse.FileType('w'), default=sys.stdout)
+    parser.add_argument('-f', '--format_out', default='conll',
+                        choices=['conll', 'jsonlines'])
     parser.add_argument('-c', '--word_col', type=int, default=2)
     return parser
 
@@ -42,12 +45,14 @@ def main(args=None):
 
     ext_input = os.path.splitext(input_filename)[-1]
     if ext_input not in ['.conll', '.jsonlines']:
-        raise Exception('Input file should be either .conll or .jsonlines, but is {}.'.format(ext_input))
+        raise Exception(
+            'Input file should be either .conll or .jsonlines, but is {}.'.format(ext_input))
 
     if ext_input == '.conll':
         labels = collections.defaultdict(set)
         stats = collections.defaultdict(int)
-        docs = minimize.minimize_partition(input_filename, labels, stats, args.word_col)
+        docs = minimize.minimize_partition(
+            input_filename, labels, stats, args.word_col)
     else:
         docs = read_jsonlines(input_filename)
 
@@ -81,6 +86,7 @@ def main(args=None):
                 logging.info("Decoded {} examples.".format(example_num + 1))
         if args.format_out == 'conll':
             conll.output_conll(output_file, sentences, predictions)
+
 
 if __name__ == "__main__":
     main()
