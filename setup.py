@@ -24,5 +24,20 @@ setuptools.setup(
     package_data={#('cfg', ['cfg/*']),
                 'e2edutch': ['lib/coref_kernels.so',
                             'cfg/*.conf']},
+    test_suite='test',
     python_requires='>=3.6',
+    install_requires=[
+            "tensorflow>=2.0.0",
+            "h5py",
+            "nltk",
+            "pyhocon",
+            "scipy",
+            "scikit-learn",
+            "torch"
+            ],
+    tests_require=[
+        'pytest',
+        'pytest-cov',
+        'pycodestyle',
+    ],
 )

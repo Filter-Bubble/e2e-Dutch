@@ -1,0 +1,14 @@
+# Config file for automatic testing at travis-ci.org
+dist: xenial   # required for Python >= 3.7
+language: python
+python:
+  - "3.6"
+  - "3.7"
+
+# command to install dependencies
+install:
+  - ./scripts/setup_all.sh
+  - python setup.py install
+
+# command to run tests
+script: pytest test
