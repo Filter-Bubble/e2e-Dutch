@@ -1,3 +1,6 @@
+# Make data directory
+mkdir -p data
+
 wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz
 gzip -d cc.nl.300.vec.gz
 mv cc.nl.300.vec data/fasttext.300.vec

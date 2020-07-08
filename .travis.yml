@@ -7,6 +7,7 @@ python:
 
 # command to install dependencies
 install:
+  - pip install -r requirements.txt
   - ./scripts/setup_all.sh
   - python setup.py install
 
