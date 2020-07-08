@@ -33,7 +33,7 @@ class CorefModel(object):
         if config["lm_path"]:
             self.lm_file = h5py.File(self.config["lm_path"], "r")
         if config["lm_model_name"]:
-            self.bert_tokenizer, self.bert_model = bert.load_bert(self.config.lm_model_name)
+            self.bert_tokenizer, self.bert_model = bert.load_bert(self.config["lm_model_name"])
         else:
             self.lm_file = None
         self.lm_layers = self.config["lm_layers"]

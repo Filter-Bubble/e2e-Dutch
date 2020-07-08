@@ -8,6 +8,7 @@ python:
 # command to install dependencies
 install:
   - pip install -r requirements.txt
+  - pip install --upgrade setuptools
   - ./scripts/setup_all.sh
   - python setup.py install
 
