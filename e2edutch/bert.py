@@ -10,8 +10,8 @@ def load_bert(model_name):
         tokenizer = RobertaTokenizer.from_pretrained("pdelobelle/robBERT-base")
         model = RobertaModel.from_pretrained("pdelobelle/robBERT-base")
     elif model_name == 'bertje':
-        tokenizer = BertTokenizer.from_pretrained("bert-base-dutch-cased")
-        model = BertModel.from_pretrained("bert-base-dutch-cased")
+        tokenizer = BertTokenizer.from_pretrained("wietsedv/bert-base-dutch-cased")
+        model = BertModel.from_pretrained("wietsedv/bert-base-dutch-cased")
     elif model_name == 'bert-nl':
         tokenizer = BertTokenizer.from_pretrained("data/bert-nl")
         config = BertConfig.from_json_file("data/bert-nl/config.json")
