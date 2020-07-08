@@ -2,6 +2,7 @@ from . import metrics
 from . import conll
 from . import coref_ops
 from . import util
+from . import bert
 import logging
 import h5py
 import tensorflow_hub as hub
@@ -31,6 +32,8 @@ class CorefModel(object):
         self.genres = {g: i for i, g in enumerate(config["genres"])}
         if config["lm_path"]:
             self.lm_file = h5py.File(self.config["lm_path"], "r")
+        if config["lm_model_name"]:
+            self.bert_tokenizer, self.bert_model = bert.load_bert(self.config.lm_model_name)
         else:
             self.lm_file = None
         self.lm_layers = self.config["lm_layers"]
@@ -112,17 +115,26 @@ class CorefModel(object):
         session.run(tf.global_variables_initializer())
         saver.restore(session, checkpoint_path)
 
-    def load_lm_embeddings(self, doc_key):
-        if self.lm_file is None:
+    def load_lm_embeddings(self, doc_key, sentences):
+        if self.lm_file is None and self.bert_model is None:
+            # No LM specified
             return np.zeros([0, 0, self.lm_size, self.lm_layers])
+        elif self.lm_file is None:
+            # No cache file, encode on the fly
+            lm_emb = bert.encode_sentences(sentences, self.bert_tokenizer, self.bert_model)
         file_key = doc_key.replace("/", ":")
-        group = self.lm_file[file_key]
-        num_sentences = len(list(group.keys()))
-        sentences = [group[str(i)][...] for i in range(num_sentences)]
-        lm_emb = np.zeros([num_sentences, max(s.shape[0]
-                                              for s in sentences), self.lm_size, self.lm_layers])
-        for i, s in enumerate(sentences):
-            lm_emb[i, :s.shape[0], :, :] = s
+        group = self.lm_file.get(file_key, None)
+        if group is None and self.bert_model is not None:
+            # Document not cached, encode on the fly
+            lm_emb = bert.encode_sentences(sentences, self.bert_tokenizer, self.bert_model)
+        elif group is not None:
+            # Load encoding from cache file
+            num_sentences = len(list(group.keys()))
+            sentences = [group[str(i)][...] for i in range(num_sentences)]
+            lm_emb = np.zeros([num_sentences, max(s.shape[0]
+                                                  for s in sentences), self.lm_size, self.lm_layers])
+            for i, s in enumerate(sentences):
+                lm_emb[i, :s.shape[0], :, :] = s
         return lm_emb
 
     def tensorize_mentions(self, mentions):
@@ -184,7 +196,7 @@ class CorefModel(object):
 
         gold_starts, gold_ends = self.tensorize_mentions(gold_mentions)
 
-        lm_emb = self.load_lm_embeddings(doc_key)
+        lm_emb = self.load_lm_embeddings(doc_key, example["sentences"])
 
         example_tensors = (tokens, context_word_emb, head_word_emb, lm_emb, char_index,
                            text_len, speaker_ids, genre, is_training, gold_starts, gold_ends, cluster_ids)

@@ -20,5 +20,9 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
+    include_package_data=True,
+    package_data={#('cfg', ['cfg/*']),
+                'e2edutch': ['lib/coref_kernels.so',
+                            'cfg/*.conf']},
     python_requires='>=3.6',
 )

@@ -8,6 +8,7 @@ import math
 import shutil
 import sys
 import logging
+import pkg_resources
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -22,7 +23,8 @@ def initialize_from_env(name):
 
     logging.info("Running experiment: {}".format(name))
 
-    config = pyhocon.ConfigFactory.parse_file("./cfg/experiments.conf")[name]
+    config = pyhocon.ConfigFactory.parse_file(pkg_resources.resource_filename("e2edutch",
+                                    "cfg/experiments.conf"))[name]
     config["log_dir"] = mkdirs(os.path.join(config["log_root"], name))
 
     logging.info(pyhocon.HOCONConverter.convert(config, "hocon"))
