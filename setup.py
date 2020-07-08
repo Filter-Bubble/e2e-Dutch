@@ -33,7 +33,8 @@ setuptools.setup(
             "pyhocon",
             "scipy",
             "scikit-learn",
-            "torch"
+            "torch",
+            "transformers"
             ],
     tests_require=[
         'pytest',
