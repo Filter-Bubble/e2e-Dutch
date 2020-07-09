@@ -53,8 +53,7 @@ class CorefModel(object):
             (tf.float32, [None, None, self.lm_size, self.lm_layers]))
         # Character indices.
         input_props.append((tf.int32, [None, None, None]))
-        input_props.append((tf.int32, [None]))  # Text lengths.
-        input_props.append((tf.int32, [None]))  # Speaker IDs.
+        input_props.append((tf.int32, [None]))  # Text lengths..
         input_props.append((tf.int32, []))  # Genre.
         input_props.append((tf.bool, []))  # Is training.
         input_props.append((tf.int32, [None]))  # Gold starts.
@@ -163,9 +162,6 @@ class CorefModel(object):
 
         sentences = example["sentences"]
         num_words = sum(len(s) for s in sentences)
-        speakers = util.flatten(example["speakers"])
-
-        assert num_words == len(speakers)
 
         max_sentence_length = max(len(s) for s in sentences)
         max_word_length = max(max(max(len(w) for w in s)
@@ -187,9 +183,6 @@ class CorefModel(object):
                                                 for c in word]
         tokens = np.array(tokens)
 
-        speaker_dict = {s: i for i, s in enumerate(set(speakers))}
-        speaker_ids = np.array([speaker_dict[s] for s in speakers])
-
         #  TODO extract genres from Dutch?
         genre = self.genres[example.get('genre', 'all')]
 
@@ -198,14 +191,14 @@ class CorefModel(object):
         lm_emb = self.load_lm_embeddings(example["doc_key"], example["sentences"])
 
         example_tensors = (tokens, context_word_emb, head_word_emb, lm_emb, char_index,
-                           text_len, speaker_ids, genre, is_training, gold_starts, gold_ends, cluster_ids)
+                           text_len, genre, is_training, gold_starts, gold_ends, cluster_ids)
 
         if is_training and len(sentences) > self.config["max_training_sentences"]:
             return self.truncate_example(*example_tensors)
         else:
             return example_tensors
 
-    def truncate_example(self, tokens, context_word_emb, head_word_emb, lm_emb, char_index, text_len, speaker_ids, genre, is_training, gold_starts, gold_ends, cluster_ids):
+    def truncate_example(self, tokens, context_word_emb, head_word_emb, lm_emb, char_index, text_len, genre, is_training, gold_starts, gold_ends, cluster_ids):
         max_training_sentences = self.config["max_training_sentences"]
         num_sentences = context_word_emb.shape[0]
         assert num_sentences > max_training_sentences
@@ -228,14 +221,13 @@ class CorefModel(object):
         text_len = text_len[sentence_offset:sentence_offset +
                             max_training_sentences]
 
-        speaker_ids = speaker_ids[word_offset: word_offset + num_words]
         gold_spans = np.logical_and(
             gold_ends >= word_offset, gold_starts < word_offset + num_words)
         gold_starts = gold_starts[gold_spans] - word_offset
         gold_ends = gold_ends[gold_spans] - word_offset
         cluster_ids = cluster_ids[gold_spans]
 
-        return tokens, context_word_emb, head_word_emb, lm_emb, char_index, text_len, speaker_ids, genre, is_training, gold_starts, gold_ends, cluster_ids
+        return tokens, context_word_emb, head_word_emb, lm_emb, char_index, text_len, genre, is_training, gold_starts, gold_ends, cluster_ids
 
     def get_candidate_labels(self, candidate_starts, candidate_ends, labeled_starts, labeled_ends, labels):
         same_start = tf.equal(tf.expand_dims(labeled_starts, 1), tf.expand_dims(
@@ -290,7 +282,7 @@ class CorefModel(object):
         top_fast_antecedent_scores += tf.log(tf.to_float(top_antecedents_mask))
         return top_antecedents, top_antecedents_mask, top_fast_antecedent_scores, top_antecedent_offsets
 
-    def get_predictions_and_loss(self, tokens, context_word_emb, head_word_emb, lm_emb, char_index, text_len, speaker_ids, genre, is_training, gold_starts, gold_ends, cluster_ids):
+    def get_predictions_and_loss(self, tokens, context_word_emb, head_word_emb, lm_emb, char_index, text_len, genre, is_training, gold_starts, gold_ends, cluster_ids):
         self.dropout = self.get_dropout(
             self.config["dropout_rate"], is_training)
         self.lexical_dropout = self.get_dropout(
@@ -441,7 +433,6 @@ class CorefModel(object):
             candidate_mention_scores, top_span_indices)  # [k]
         top_span_sentence_indices = tf.gather(
             candidate_sentence_indices, top_span_indices)  # [k]
-        top_span_speaker_ids = tf.gather(speaker_ids, top_span_starts)  # [k]
 
         c = tf.minimum(self.config["max_top_antecedents"], k)
 
@@ -457,7 +448,7 @@ class CorefModel(object):
                 top_antecedent_emb = tf.gather(
                     top_span_emb, top_antecedents)  # [k, c, emb]
                 top_antecedent_scores = top_fast_antecedent_scores + self.get_slow_antecedent_scores(
-                    top_span_emb, top_antecedents, top_antecedent_emb, top_antecedent_offsets, top_span_speaker_ids, genre_emb)  # [k, c]
+                    top_span_emb, top_antecedents, top_antecedent_emb, top_antecedent_offsets, genre_emb)  # [k, c]
                 top_antecedent_weights = tf.nn.softmax(
                     tf.concat([dummy_scores, top_antecedent_scores], 1))  # [k, c + 1]
                 top_antecedent_emb = tf.concat(
@@ -561,21 +552,13 @@ class CorefModel(object):
             (1 - use_identity) * logspace_idx
         return tf.clip_by_value(combined_idx, 0, 9)
 
-    def get_slow_antecedent_scores(self, top_span_emb, top_antecedents, top_antecedent_emb, top_antecedent_offsets, top_span_speaker_ids, genre_emb):
+    def get_slow_antecedent_scores(self, top_span_emb, top_antecedents, top_antecedent_emb, top_antecedent_offsets, genre_emb):
         k = util.shape(top_span_emb, 0)
         c = util.shape(top_antecedents, 1)
 
         feature_emb_list = []
 
         if self.config["use_metadata"]:
-            top_antecedent_speaker_ids = tf.gather(
-                top_span_speaker_ids, top_antecedents)  # [k, c]
-            same_speaker = tf.equal(tf.expand_dims(
-                top_span_speaker_ids, 1), top_antecedent_speaker_ids)  # [k, c]
-            speaker_pair_emb = tf.gather(tf.get_variable("same_speaker_emb", [
-                                         2, self.config["feature_size"]]), tf.to_int32(same_speaker))  # [k, c, emb]
-            feature_emb_list.append(speaker_pair_emb)
-
             tiled_genre_emb = tf.tile(tf.expand_dims(
                 tf.expand_dims(genre_emb, 0), 0), [k, c, 1])  # [k, c, emb]
             feature_emb_list.append(tiled_genre_emb)

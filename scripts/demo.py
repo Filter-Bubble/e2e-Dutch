@@ -13,12 +13,10 @@ nltk.download("punkt")
 def create_example(text):
     raw_sentences = sent_tokenize(text)
     sentences = [word_tokenize(s) for s in raw_sentences]
-    speakers = [["" for _ in sentence] for sentence in sentences]
     return {
         "doc_key": "nw",
         "clusters": [],
-        "sentences": sentences,
-        "speakers": speakers,
+        "sentences": sentences
     }
 
 

@@ -15,8 +15,6 @@ class DocumentState(object):
     def __init__(self):
         self.doc_key = None
         self.text = []
-        self.text_speakers = []
-        self.speakers = []
         self.sentences = []
         self.constituents = {}
         self.const_stack = []
@@ -28,8 +26,6 @@ class DocumentState(object):
     def assert_empty(self):
         assert self.doc_key is None
         assert len(self.text) == 0
-        assert len(self.text_speakers) == 0
-        assert len(self.speakers) == 0
         assert len(self.sentences) == 0
         assert len(self.constituents) == 0
         assert len(self.const_stack) == 0
@@ -41,8 +37,6 @@ class DocumentState(object):
     def assert_finalizable(self):
         assert self.doc_key is not None
         assert len(self.text) == 0
-        assert len(self.text_speakers) == 0
-        assert len(self.speakers) > 0
         assert len(self.sentences) > 0
         #assert len(self.constituents) > 0
         assert len(self.const_stack) == 0
@@ -76,7 +70,6 @@ class DocumentState(object):
         return {
             "doc_key": self.doc_key,
             "sentences": self.sentences,
-            "speakers": self.speakers,
             "clusters": merged_clusters
         }
 
@@ -133,8 +126,6 @@ def handle_line(line, document_state, labels, stats, word_col):
             stats["num_sents"] += 1
             document_state.sentences.append(tuple(document_state.text))
             del document_state.text[:]
-            document_state.speakers.append(tuple(document_state.text_speakers))
-            del document_state.text_speakers[:]
         document_state.assert_finalizable()
         finalized_state = document_state.finalize()
         stats["num_clusters"] += len(finalized_state["clusters"])
@@ -152,8 +143,6 @@ def handle_line(line, document_state, labels, stats, word_col):
             stats["num_sents"] += 1
             document_state.sentences.append(tuple(document_state.text))
             del document_state.text[:]
-            document_state.speakers.append(tuple(document_state.text_speakers))
-            del document_state.text_speakers[:]
             return None
         elif len(row) == 0 and len(document_state.text) == 0:
             return None
@@ -161,13 +150,11 @@ def handle_line(line, document_state, labels, stats, word_col):
 
         # doc_key = conll.get_doc_key(row[0], 0) # TODO: use part?
         word = normalize_word(row[word_col])
-        speaker = 'UNKNOWN'
         coref = row[-1]
 
         word_index = len(document_state.text) + sum(len(s)
                                                     for s in document_state.sentences)
         document_state.text.append(word)
-        document_state.text_speakers.append(speaker)
 
         if coref != "-":
             for segment in coref.split("|"):
