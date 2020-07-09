@@ -130,5 +130,9 @@ dmypy.json
 
 # Project specific
 logs/
-data/
+data/*.jsonlines
+data/*.conll
+data/*.hdf5
+data/*.vec
+data/*.vec.filtered
 conll-2012
