@@ -190,13 +190,12 @@ class CorefModel(object):
         speaker_dict = {s: i for i, s in enumerate(set(speakers))}
         speaker_ids = np.array([speaker_dict[s] for s in speakers])
 
-        doc_key = example["doc_key"]
-        # doc_key[:2]] TODO extract genres from Dutch?
-        genre = self.genres['all']
+        #  TODO extract genres from Dutch?
+        genre = self.genres[example.get('genre', 'all')]
 
         gold_starts, gold_ends = self.tensorize_mentions(gold_mentions)
 
-        lm_emb = self.load_lm_embeddings(doc_key, example["sentences"])
+        lm_emb = self.load_lm_embeddings(example["doc_key"], example["sentences"])
 
         example_tensors = (tokens, context_word_emb, head_word_emb, lm_emb, char_index,
                            text_len, speaker_ids, genre, is_training, gold_starts, gold_ends, cluster_ids)
