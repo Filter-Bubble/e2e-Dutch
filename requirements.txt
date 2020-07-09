@@ -1,8 +1,8 @@
+scipy==1.4.1
 scikit-learn
 tensorflow>=2.0.0
 h5py
 nltk
 pyhocon
-scipy
 transformers
 tensorflow>=2.0.0
