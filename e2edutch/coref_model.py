@@ -723,7 +723,7 @@ class CorefModel(object):
         coref_evaluator = metrics.CorefEvaluator()
 
         for example_num, (tensorized_example, example) in enumerate(self.eval_data):
-            _, _, _, _, _, _, _, _, _, gold_starts, gold_ends, _ = tensorized_example
+            _, _, _, _, _, _, _, _, gold_starts, gold_ends, _ = tensorized_example
             feed_dict = {i: t for i, t in zip(
                 self.input_tensors, tensorized_example)}
             candidate_starts, candidate_ends, candidate_mention_scores, top_span_starts, top_span_ends, top_antecedents, top_antecedent_scores = session.run(
