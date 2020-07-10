@@ -14,7 +14,7 @@ mv reference-coreference-scorers conll-2012/scorer
 python e2edutch/minimize.py data/train.dutch.conll
 python e2edutch/minimize.py data/dev.dutch.conll
 
-python get_char_vocab.py data/train.dutch.conll data/dev.dutch.conll data/char_vocab.duch.txt
+python scripts/get_char_vocab.py data/train.dutch.conll data/dev.dutch.conll data/char_vocab.duch.txt
 
 # Filter word embeddings
 python scripts/filter_embeddings.py -c data/fasttext.300.vec data/train.dutch.jsonlines data/dev.dutch.jsonlines data/fasttext.300.vec.filtered
