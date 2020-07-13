@@ -55,7 +55,6 @@ def main(args=None):
 
     output_file = args.output_file
     model = cm.CorefModel(config)
-    include_singletons = config['include_singletons']
     sentences = {}
     predictions = {}
     with tf.Session() as session:
@@ -71,8 +70,7 @@ def main(args=None):
             predicted_antecedents = model.get_predicted_antecedents(
                 top_antecedents, top_antecedent_scores)
             example["predicted_clusters"], _ = model.get_predicted_clusters(
-                top_span_starts, top_span_ends, predicted_antecedents,
-                include_singletons=include_singletons)
+                top_span_starts, top_span_ends, predicted_antecedents)
             if args.format_out == 'jsonlines':
                 output_file.write(json.dumps(example))
                 output_file.write("\n")

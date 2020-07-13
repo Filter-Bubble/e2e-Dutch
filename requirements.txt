@@ -6,4 +6,4 @@ h5py
 nltk
 pyhocon
 transformers
-tensorflow>=2.0.0
+tensorflow_hub
