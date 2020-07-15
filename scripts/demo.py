@@ -1,4 +1,3 @@
-from nltk.tokenize import sent_tokenize, word_tokenize
 from six.moves import input
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
@@ -6,18 +5,7 @@ import e2edutch.coref_model as cm
 import e2edutch.util
 import argparse
 import sys
-import nltk
-nltk.download("punkt")
 
-
-def create_example(text):
-    raw_sentences = sent_tokenize(text)
-    sentences = [word_tokenize(s) for s in raw_sentences]
-    return {
-        "doc_key": "nw",
-        "clusters": [],
-        "sentences": sentences
-    }
 
 
 def print_predictions(example):
@@ -28,7 +16,7 @@ def print_predictions(example):
 
 
 def make_predictions(text, model):
-    example = create_example(text)
+    example = e2edutch.util.create_example(text)
     tensorized_example = model.tensorize_example(example, is_training=False)
     feed_dict = {i: t for i, t in zip(model.input_tensors, tensorized_example)}
     _, _, _, mention_starts, mention_ends, antecedents, antecedent_scores, head_scores = session.run(

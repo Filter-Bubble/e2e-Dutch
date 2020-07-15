@@ -41,17 +41,20 @@ def main(args=None):
     input_filename = args.input_filename
 
     ext_input = os.path.splitext(input_filename)[-1]
-    if ext_input not in ['.conll', '.jsonlines']:
+    if ext_input not in ['.conll', '.jsonlines', '.txt']:
         raise Exception(
-            'Input file should be either .conll or .jsonlines, but is {}.'.format(ext_input))
+            'Input file should be .conll, .txt or .jsonlines, but is {}.'.format(ext_input))
 
     if ext_input == '.conll':
         labels = collections.defaultdict(set)
         stats = collections.defaultdict(int)
         docs = minimize.minimize_partition(
             input_filename, labels, stats, args.word_col)
-    else:
+    elif ext_input == '.jsonlines':
         docs = read_jsonlines(input_filename)
+    else:
+        text = open(input_filename).read()
+        docs = [util.create_example(text)]
 
     output_file = args.output_file
     model = cm.CorefModel(config)

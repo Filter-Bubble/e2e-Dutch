@@ -9,6 +9,9 @@ import shutil
 import sys
 import logging
 import pkg_resources
+import nltk
+nltk.download("punkt")
+from nltk.tokenize import sent_tokenize, word_tokenize
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -38,6 +41,16 @@ def copy_checkpoint(source, target):
 
 def make_summary(value_dict):
     return tf.Summary(value=[tf.Summary.Value(tag=k, simple_value=v) for k, v in value_dict.items()])
+
+
+def create_example(text, doc_key='example'):
+    raw_sentences = sent_tokenize(text)
+    sentences = [word_tokenize(s, language='dutch') for s in raw_sentences]
+    return {
+        "doc_key": doc_key,
+        "clusters": [],
+        "sentences": sentences
+    }
 
 
 def flatten(l):
