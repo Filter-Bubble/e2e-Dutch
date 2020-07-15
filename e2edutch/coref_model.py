@@ -32,10 +32,13 @@ class CorefModel(object):
         self.genres = {g: i for i, g in enumerate(config["genres"])}
         if config["lm_path"]:
             self.lm_file = h5py.File(self.config["lm_path"], "r")
+        else:
+            self.lm_file = None
         if config["lm_model_name"]:
             self.bert_tokenizer, self.bert_model = bert.load_bert(self.config["lm_model_name"])
         else:
-            self.lm_file = None
+            self.bert_tokenizer = None
+            self.bert_model = None
         self.lm_layers = self.config["lm_layers"]
         self.lm_size = self.config["lm_size"]
         self.eval_data = None  # Load eval data lazily.
@@ -121,6 +124,7 @@ class CorefModel(object):
         elif self.lm_file is None:
             # No cache file, encode on the fly
             lm_emb = bert.encode_sentences(sentences, self.bert_tokenizer, self.bert_model)
+            return lm_emb
         file_key = doc_key.replace("/", ":")
         group = self.lm_file.get(file_key, None)
         if group is None and self.bert_model is not None:
