@@ -117,7 +117,7 @@ def handle_line(line, document_state, labels, stats, word_col):
     begin_document_match = re.match(conll.BEGIN_DOCUMENT_REGEX, line)
     if begin_document_match:
         document_state.assert_empty()
-        document_state.doc_key = begin_document_match.group(1)
+        document_state.doc_key = conll.get_doc_key(*begin_document_match.groups())
         return None
     elif line.startswith("#end document"):
         if len(document_state.text) > 0:  # no newline before end document
@@ -148,7 +148,7 @@ def handle_line(line, document_state, labels, stats, word_col):
             return None
         assert len(row) >= 4
 
-        # doc_key = conll.get_doc_key(row[0], 0) # TODO: use part?
+
         word = normalize_word(row[word_col])
         coref = row[-1]
 

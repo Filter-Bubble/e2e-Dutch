@@ -7,15 +7,26 @@ import subprocess
 import operator
 import collections
 
-BEGIN_DOCUMENT_REGEX = re.compile(r"#begin document \((.*)\);(?: part \d+)?")
+BEGIN_DOCUMENT_REGEX = re.compile(r"#begin document \((.*)\);(?: part (\d+))?")
 COREF_RESULTS_REGEX = re.compile(
     r".*Coreference: Recall: \([0-9.]+ / [0-9.]+\) ([0-9.]+)%\tPrecision: \([0-9.]+ / [0-9.]+\) ([0-9.]+)%\tF1: ([0-9.]+)%.*", re.DOTALL)
 
 
-def get_doc_key(doc_id, part):
-    return doc_id
-    # return "{}_{}".format(doc_id, int(part))
+def get_doc_key(doc_id, part=None):
+    if part is None:
+        return doc_id
+    else:
+        return '{}.p.{}'.format(doc_id, part)
 
+def get_reverse_doc_key(doc_key):
+    segments = doc_key.split('.p.')
+    if len(segments)>1:
+        part = segments[-1]
+        doc_id = '.p.'.join(segments[:-1])
+    else:
+        doc_id = doc_key
+        part = None
+    return doc_id, part
 
 def get_prediction_map(predictions):
     prediction_map = {}
@@ -44,7 +55,11 @@ def output_conll(output_file, sentences, predictions):
     prediction_map = get_prediction_map(predictions)
     for doc_key in prediction_map:
         start_map, end_map, word_map = prediction_map[doc_key]
-        output_file.write("#begin document ({}); part 000\n\n".format(doc_key))
+        doc_id, part = get_reverse_doc_key(doc_key)
+        if part is None:
+            output_file.write("#begin document ({});\n\n".format(doc_id))
+        else:
+            output_file.write("#begin document ({}); part {}\n\n".format(doc_id, part))
         word_index = 0
         for sent in sentences[doc_key]:
             for i, word in enumerate(sent):
@@ -59,7 +74,7 @@ def output_conll(output_file, sentences, predictions):
                     for cluster_id in start_map[word_index]:
                         coref_list.append("({}".format(cluster_id))
                 coref = '-' if len(coref_list) == 0 else "|".join(coref_list)
-                line = '\t'.join([doc_key, str(i), word, coref])
+                line = '\t'.join([doc_id, str(i), word, coref])
                 output_file.write(line+'\n')
                 word_index += 1
             output_file.write('\n')
