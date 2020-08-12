@@ -156,7 +156,7 @@ def handle_line(line, document_state, labels, stats, word_col):
                                                     for s in document_state.sentences)
         document_state.text.append(word)
 
-        if coref != "-":
+        if coref != "-" and coref != '_':
             for segment in coref.split("|"):
                 if segment[0] == "(":
                     if segment[-1] == ")":
@@ -167,7 +167,7 @@ def handle_line(line, document_state, labels, stats, word_col):
                         cluster_id = int(segment[1:])
                         document_state.coref_stacks[cluster_id].append(
                             word_index)
-                else:
+                elif segment[-1] == ")":
                     cluster_id = int(segment[:-1])
                     start = document_state.coref_stacks[cluster_id].pop()
                     document_state.clusters[cluster_id].append(
