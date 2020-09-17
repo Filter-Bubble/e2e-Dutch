@@ -25,6 +25,10 @@ The e2e-Dutch scripts can take two types of input:
 The model configuration are described in the file `cfg/experiments.conf`. To train a new model:
 - Make sure the config file describes the model you wish to train
 - Run `scripts/setup_train.sh`. This script converts the conll2012 data to jsonlines files, and caches the word and contextualized embeddings.
+- If you want to enable the use of a GPU, set the environment variable:
+```bash
+export GPU=0
+```
 - Run the training script:
 ```bash
 python scripts/train.py <model-name>
