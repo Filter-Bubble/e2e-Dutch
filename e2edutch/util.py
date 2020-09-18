@@ -9,9 +9,6 @@ import shutil
 import sys
 import logging
 import pkg_resources
-import nltk
-nltk.download("punkt")
-from nltk.tokenize import sent_tokenize, word_tokenize
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -45,6 +42,9 @@ def make_summary(value_dict):
 
 
 def create_example(text, doc_key='example'):
+    import nltk
+    nltk.download("punkt")
+    from nltk.tokenize import sent_tokenize, word_tokenize
     raw_sentences = sent_tokenize(text)
     sentences = [word_tokenize(s, language='dutch') for s in raw_sentences]
     return {
