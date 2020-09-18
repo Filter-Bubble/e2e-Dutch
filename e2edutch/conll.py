@@ -7,7 +7,7 @@ import subprocess
 import operator
 import collections
 
-BEGIN_DOCUMENT_REGEX = re.compile(r"#begin document \(?([^\);]*)\)?;?(?: part (\d+))?") 
+BEGIN_DOCUMENT_REGEX = re.compile(r"#begin document \(?([^\);]*)\)?;?(?: part (\d+))?")
 COREF_RESULTS_REGEX = re.compile(
     r".*Coreference: Recall: \([0-9.]+ / [0-9.]+\) ([0-9.]+)%\tPrecision: \([0-9.]+ / [0-9.]+\) ([0-9.]+)%\tF1: ([0-9.]+)%.*", re.DOTALL)
 
@@ -92,7 +92,7 @@ def output_conll_align(input_file, output_file, predictions):
         elif row[0].startswith("#"):
             begin_match = re.match(BEGIN_DOCUMENT_REGEX, line)
             if begin_match:
-                doc_key = begin_match.group(1)
+                doc_key = get_doc_key(*begin_match.groups())
                 start_map, end_map, word_map = prediction_map[doc_key]
                 word_index = 0
             output_file.write(line)
