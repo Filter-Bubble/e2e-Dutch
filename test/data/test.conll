@@ -1,0 +1,7 @@
+#begin document (doc1); part 1
+doc1 0 Dit  (0)
+doc1  1 is  -
+doc1  2 een  (1
+doc1  3 doc1  1)
+doc1  4 .  -
+#end document
