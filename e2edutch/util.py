@@ -18,7 +18,7 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
 
-def initialize_from_env(name):
+def initialize_from_env(name, cfg_file=None):
     if "GPU" in os.environ:
         set_gpus(int(os.environ["GPU"]))
     else:
@@ -26,8 +26,9 @@ def initialize_from_env(name):
 
     logging.info("Running experiment: {}".format(name))
 
-    config = pyhocon.ConfigFactory.parse_file(pkg_resources.resource_filename("e2edutch",
-                                    "cfg/experiments.conf"))[name]
+    if cfg_file is None:
+        cfg_file = pkg_resources.resource_filename("e2edutch", 'cfg/experiments.conf')
+    config = pyhocon.ConfigFactory.parse_file(cfg_file)[name]
     config["log_dir"] = mkdirs(os.path.join(config["log_root"], name))
 
     logging.info(pyhocon.HOCONConverter.convert(config, "hocon"))

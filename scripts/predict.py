@@ -23,6 +23,10 @@ def get_parser():
     parser.add_argument('-f', '--format_out', default='conll',
                         choices=['conll', 'jsonlines'])
     parser.add_argument('-c', '--word_col', type=int, default=2)
+    parser.add_argument('--cfg_file',
+        type=str,
+        default=None,
+        help="config file")
     return parser
 
 
@@ -35,7 +39,7 @@ def read_jsonlines(input_filename):
 def main(args=None):
     parser = get_parser()
     args = parser.parse_args()
-    config = util.initialize_from_env(args.config)
+    config = util.initialize_from_env(args.config, args.cfg_file)
 
     # Input file in .jsonlines format or .conll.
     input_filename = args.input_filename

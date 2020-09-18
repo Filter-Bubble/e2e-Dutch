@@ -36,12 +36,16 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('config')
     parser.add_argument('input_file', type=argparse.FileType('r')) #, default=sys.stdin)
+    parser.add_argument('--cfg_file',
+        type=str,
+        default=None,
+        help="config file")
     return parser
 
 
 if __name__ == "__main__":
     args = get_parser().parse_args()
-    config = e2edutch.util.initialize_from_env(args.config)
+    config = e2edutch.util.initialize_from_env(args.config, args.cfg_file)
     model = cm.CorefModel(config)
     with tf.Session() as session:
         model.restore(session)

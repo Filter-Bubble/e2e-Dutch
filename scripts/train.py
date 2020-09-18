@@ -21,16 +21,20 @@ def get_parser():
     parser.add_argument('--eval',
                         type=str,
                         default=None,
-                        help="jsonlines file used for evaluating"))
+                        help="jsonlines file used for evaluating")
     parser.add_argument('--eval_conll',
                         type=str,
                         default=None,
-                        help="conll file used for evaluating"))
+                        help="conll file used for evaluating")
+    parser.add_argument('--cfg_file',
+                        type=str,
+                        default=None,
+                        help="config file")
     return parser
 
 def main(args=None):
     args = get_parser().parse_args()
-    config = util.initialize_from_env(args.config)
+    config = util.initialize_from_env(args.config, args.cfg_file)
     # Overwrite train and eval file if specified
     if args.train is not None:
         config['train_path'] = args.train
