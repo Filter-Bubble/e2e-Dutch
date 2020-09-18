@@ -14,11 +14,30 @@ tf.disable_v2_behavior()
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('config')
+    parser.add_argument('--train',
+                        type=str,
+                        default=None,
+                        help="jsonlines file used for training")
+    parser.add_argument('--eval',
+                        type=str,
+                        default=None,
+                        help="jsonlines file used for evaluating"))
+    parser.add_argument('--eval_conll',
+                        type=str,
+                        default=None,
+                        help="conll file used for evaluating"))
     return parser
 
 def main(args=None):
     args = get_parser().parse_args()
     config = util.initialize_from_env(args.config)
+    # Overwrite train and eval file if specified
+    if args.train is not None:
+        config['train_path'] = args.train
+    if args.eval is not None:
+        config['eval_path'] = args.eval
+    if args.eval_conll is not None:
+        config['conll_eval_path'] = args.eval_conll
 
     report_frequency = config["report_frequency"]
     eval_frequency = config["eval_frequency"]
