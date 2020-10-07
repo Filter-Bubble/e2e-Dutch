@@ -50,7 +50,8 @@ test_config = {'max_top_antecedents': 30,
                             ('worker',
                              ['localhost:2223', 'localhost:2224'])])),
               ('gpus', [0, 1])]),
- 'log_dir': 'logs/best'
+ 'log_dir': 'logs/best',
+ 'datapath': '.'
  }
 
 
