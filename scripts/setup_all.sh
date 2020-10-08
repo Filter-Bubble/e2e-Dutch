@@ -13,6 +13,11 @@ rm cc.nl.300.vec
 # mv dutch_cased_punct_L-12_H-768_A-12-NEW data/bert-nl
 # rm dutch_cased_punct_L-12_H-768_A-12.zip
 
+# Download trained e2e model_
+wget https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download -O model.zip
+unzip model.zip
+rm model.zip
+
 # Build custom kernels.
 TF_CFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
 TF_LFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') )

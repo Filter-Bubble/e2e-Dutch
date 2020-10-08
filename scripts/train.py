@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import argparse
+import logging
 
 from e2edutch import util
 from e2edutch import coref_model as cm
@@ -30,11 +31,20 @@ def get_parser():
                         type=str,
                         default=None,
                         help="config file")
+    parser.add_argument('--model_cfg_file',
+                        type=str,
+                        default=None,
+                        help="model config file")
+    parser.add_argument('-v', '--verbose', action='store_true')
     return parser
+
+
 
 def main(args=None):
     args = get_parser().parse_args()
-    config = util.initialize_from_env(args.config, args.cfg_file)
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    config = util.initialize_from_env(args.config, args.cfg_file, args.model_cfg_file)
     # Overwrite train and eval file if specified
     if args.train is not None:
         config['train_path'] = args.train

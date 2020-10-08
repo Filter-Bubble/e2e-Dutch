@@ -23,15 +23,15 @@ class CorefModel(object):
     def __init__(self, config):
         self.config = config
         self.context_embeddings = util.EmbeddingDictionary(
-            config["context_embeddings"])
+            config["context_embeddings"], config['datapath'])
         self.head_embeddings = util.EmbeddingDictionary(
-            config["head_embeddings"], maybe_cache=self.context_embeddings)
+            config["context_embeddings"], config['datapath'], maybe_cache=self.context_embeddings)
         self.char_embedding_size = config["char_embedding_size"]
-        self.char_dict = util.load_char_dict(config["char_vocab_path"])
+        self.char_dict = util.load_char_dict(os.path.join(config['datapath'], config["char_vocab_path"]))
         self.max_span_width = config["max_span_width"]
         self.genres = {g: i for i, g in enumerate(config["genres"])}
         if config["lm_path"]:
-            self.lm_file = h5py.File(self.config["lm_path"], "r")
+            self.lm_file = h5py.File(os.path.join(config['datapath'], self.config["lm_path"]), "r")
         else:
             self.lm_file = None
         if config["lm_model_name"]:

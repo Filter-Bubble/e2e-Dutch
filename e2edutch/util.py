@@ -15,18 +15,43 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
 
-def initialize_from_env(name, cfg_file=None):
+def get_data_dir(config):
+    if config.get('datapath', None) is not None:
+        return config['datapath']
+    elif os.environ.get('E2E_HOME', None) is not None:
+        return os.environ['E2E_HOME']
+    else:
+        return 'data'
+
+
+def get_log_dir(config):
+    if config.get('log_root', None) is not None:
+        return config['log_root']
+    elif os.environ.get('E2E_HOME', None) is not None:
+        return os.path.join(os.environ['E2E_HOME'], 'logs')
+    else:
+        return 'logs'
+
+
+def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
     if "GPU" in os.environ:
         set_gpus(int(os.environ["GPU"]))
     else:
         set_gpus()
 
-    logging.info("Running experiment: {}".format(name))
+    logging.info("Running experiment: {}".format(model_name))
 
     if cfg_file is None:
-        cfg_file = pkg_resources.resource_filename("e2edutch", 'cfg/experiments.conf')
-    config = pyhocon.ConfigFactory.parse_file(cfg_file)[name]
-    config["log_dir"] = mkdirs(os.path.join(config["log_root"], name))
+        cfg_file = pkg_resources.resource_filename("e2edutch", 'cfg/defaults.conf')
+    if model_cfg_file is None:
+        model_cfg_file = pkg_resources.resource_filename("e2edutch", 'cfg/models.conf')
+    config_base = pyhocon.ConfigFactory.parse_file(cfg_file)
+    config_model = pyhocon.ConfigFactory.parse_file(model_cfg_file)[model_name]
+    config = pyhocon.ConfigTree.merge_configs(config_model, config_base)
+    config['datapath'] = get_data_dir(config)
+    config['log_root'] = get_log_dir(config)
+
+    config["log_dir"] = mkdirs(os.path.join(config["log_root"], model_name))
 
     logging.info(pyhocon.HOCONConverter.convert(config, "hocon"))
     return config
@@ -205,10 +230,10 @@ class RetrievalEvaluator(object):
 
 
 class EmbeddingDictionary(object):
-    def __init__(self, info, normalize=True, maybe_cache=None):
+    def __init__(self, info, datapath='', normalize=True, maybe_cache=None):
         self._size = info["size"]
         self._normalize = normalize
-        self._path = info["path"]
+        self._path = os.path.join(datapath, info["path"])
         self._cased = info["cased"] if "cased" in info else True
         if maybe_cache is not None and maybe_cache._path == self._path:
             assert self._size == maybe_cache._size
