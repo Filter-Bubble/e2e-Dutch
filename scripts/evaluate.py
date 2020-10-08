@@ -5,6 +5,7 @@ from e2edutch import coref_model as cm
 import os
 import sys
 import argparse
+import logging
 
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
@@ -17,11 +18,18 @@ def get_parser():
         type=str,
         default=None,
         help="config file")
+    parser.add_argument('--model_cfg_file',
+                        type=str,
+                        default=None,
+                        help="model config file")
+    parser.add_argument('-v', '--verbose', action='store_true')
     return parser
 
 if __name__ == "__main__":
     args = get_parser().parse_args()
-    config = util.initialize_from_env(args.config, args.cfg_file)
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    config = util.initialize_from_env(args.config, args.cfg_file, args.model_cfg_file)
     model = cm.CorefModel(config)
     with tf.Session() as session:
         model.restore(session)

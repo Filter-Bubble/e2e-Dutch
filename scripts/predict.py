@@ -27,6 +27,10 @@ def get_parser():
         type=str,
         default=None,
         help="config file")
+    parser.add_argument('--model_cfg_file',
+            type=str,
+            default=None,
+            help="model config file")
     parser.add_argument('-v', '--verbose', action='store_true')
     return parser
 
@@ -42,7 +46,7 @@ def main(args=None):
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
-    config = util.initialize_from_env(args.config, args.cfg_file)
+    config = util.initialize_from_env(args.config, args.cfg_file, args.model_cfg_file)
 
     # Input file in .jsonlines format or .conll.
     input_filename = args.input_filename
