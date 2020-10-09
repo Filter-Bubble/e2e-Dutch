@@ -2,10 +2,12 @@ from e2edutch import conll
 from e2edutch import minimize
 from e2edutch import util
 from e2edutch import coref_model as cm
+from e2edutch import naf
 
 import sys
 import json
 import os
+from lxml import etree
 import collections
 import argparse
 import logging
@@ -21,16 +23,12 @@ def get_parser():
     parser.add_argument('-o', '--output_file',
                         type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('-f', '--format_out', default='conll',
-                        choices=['conll', 'jsonlines'])
+                        choices=['conll', 'jsonlines', 'naf'])
     parser.add_argument('-c', '--word_col', type=int, default=2)
     parser.add_argument('--cfg_file',
         type=str,
         default=None,
         help="config file")
-    parser.add_argument('--model_cfg_file',
-            type=str,
-            default=None,
-            help="model config file")
     parser.add_argument('-v', '--verbose', action='store_true')
     return parser
 
@@ -46,15 +44,15 @@ def main(args=None):
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
-    config = util.initialize_from_env(args.config, args.cfg_file, args.model_cfg_file)
+    config = util.initialize_from_env(args.config, args.cfg_file)
 
     # Input file in .jsonlines format or .conll.
     input_filename = args.input_filename
 
     ext_input = os.path.splitext(input_filename)[-1]
-    if ext_input not in ['.conll', '.jsonlines', '.txt']:
+    if ext_input not in ['.conll', '.jsonlines', '.txt', '.naf']:
         raise Exception(
-            'Input file should be .conll, .txt or .jsonlines, but is {}.'.format(ext_input))
+            'Input file should be .naf, .conll, .txt or .jsonlines, but is {}.'.format(ext_input))
 
     if ext_input == '.conll':
         labels = collections.defaultdict(set)
@@ -63,6 +61,10 @@ def main(args=None):
             input_filename, labels, stats, args.word_col)
     elif ext_input == '.jsonlines':
         docs = read_jsonlines(input_filename)
+    elif ext_input == '.naf':
+        naf_obj = naf.get_naf(input_filename)
+        jsonlines_obj, term_ids, tok_ids = naf.get_jsonlines(naf_obj)
+        docs = [jsonlines_obj]
     else:
         text = open(input_filename).read()
         docs = [util.create_example(text)]
@@ -95,7 +97,24 @@ def main(args=None):
                 logging.info("Decoded {} examples.".format(example_num + 1))
         if args.format_out == 'conll':
             conll.output_conll(output_file, sentences, predictions)
-
+        elif args.format_out == 'naf':
+            # Check number of docs - what to do if multiple?
+            # Create naf obj if input format was not naf
+            if ext_input != '.naf':
+                # To do: add linguistic processing layers for terms and tokens
+                logging.warn('Outputting NAF when input was not naf, no dependency information available')
+                for doc_key in sentences:
+                    naf_obj, term_ids = naf.get_naf_from_sentences(sentences[doc_key])
+                    naf_obj = naf.create_coref_layer(naf_obj, predictions[doc_key], term_ids)
+                    naf_obj = naf.add_linguistic_processors(naf_obj)
+                    output_file.write(etree.tostring(naf_obj.root, pretty_print=True, encoding=str))
+                    # To do, make sepearate outputs?
+                    #TO do, use dependency information from conll?
+            else:
+                # We only have one input doc
+                naf_obj = naf.create_coref_layer(naf_obj, example["predicted_clusters"], term_ids)
+                naf_obj = naf.add_linguistic_processors(naf_obj)
+                output_file.write(etree.tostring(naf_obj.root, pretty_print=True, encoding=str))
 
 if __name__ == "__main__":
     main()

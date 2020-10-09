@@ -7,3 +7,4 @@ nltk
 pyhocon
 transformers
 tensorflow_hub
+KafNafParserPy
