@@ -4,26 +4,20 @@ import logging
 import KafNafParserPy
 from KafNafParserPy import KafNafParser
 from lxml.etree import XMLSyntaxError
-from io import BytesIO
-import sys
 import itertools
-from lxml import etree
-from operator import itemgetter
-from xml.sax.saxutils import escape
-import json
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
 logger = logging.getLogger(__name__)
 this_name = 'Coreference resolution based on e2e model'
 
-def get_naf(input_file):
 
-    input = input_file.read()
+def get_naf(input_filename):
     try:
-        naf = KafNafParser(BytesIO(input))
+        naf = KafNafParser(input_filename)
     except XMLSyntaxError:
-        input = input.decode("utf-8")
+        with open(input_filename) as input_file:
+            input = input_file.read()
         if "<NAF" in input and "</NAF>" in input:
             # I'm guessing this should be a NAF file but something is wrong
             logging.exception("Error parsing NAF file")
@@ -75,7 +69,7 @@ def get_naf_from_sentences(sentences):
         logging.info('Creating the term layer...')
         for num_token, (token, token_id) in enumerate(zip(sentence, token_ids_sub)):
             new_term_id = 't_'+str(count_terms)
-            count_terms+=1
+            count_terms += 1
             term_ids_sub.append(new_term_id)
             term_obj = KafNafParserPy.Cterm(type=naf_obj.get_type())
             term_obj.set_id(new_term_id)
@@ -90,17 +84,14 @@ def get_naf_from_sentences(sentences):
 
 def create_coref_layer(knaf_obj, clusters, term_ids):
     term_ids_list = list(itertools.chain.from_iterable(term_ids))
-    logging.debug('nr of term ids: {}'.format(len(term_ids_list)))
     for cluster_id, cluster in enumerate(clusters):
         coref_obj = KafNafParserPy.Ccoreference(type=knaf_obj.get_type())
         coref_obj.set_id('co{}'.format(cluster_id+1))
         coref_obj.set_type('entity')
         for start, end in cluster:
             coref_obj.add_span(term_ids_list[start:end+1])
-            logging.debug(str((cluster_id, term_ids_list[start:end+1])))
         knaf_obj.add_coreference(coref_obj)
     return knaf_obj
-
 
 
 def add_linguistic_processors(in_obj):
@@ -114,13 +105,15 @@ def add_linguistic_processors(in_obj):
 
     return in_obj
 
+
 def get_jsonlines(knaf_obj):
     sent_term_tok = []
 
     for term in knaf_obj.get_terms():
         for tok_id in term.get_span_ids():
             tok = knaf_obj.get_token(tok_id)
-            sent_term_tok.append((tok.get_sent(), term.get_id(), tok_id, tok.get_text()))
+            sent_term_tok.append(
+                (tok.get_sent(), term.get_id(), tok_id, tok.get_text()))
 
     sentences = []
     term_ids = []
@@ -132,43 +125,7 @@ def get_jsonlines(knaf_obj):
         tok_ids.append([t[2] for t in idlist])
 
     jsonlines_obj = {'doc_key': str(knaf_obj.get_filename()),
-                          'sentences': sentences,
-                          'clusters': []
-                          }
+                     'sentences': sentences,
+                     'clusters': []
+                     }
     return jsonlines_obj, term_ids, tok_ids
-
-
-# def parse(input_file, cfg_file, model_name='best'):
-#     if isinstance(input_file, KafNafParser):
-#         knaf_obj = input_file
-#     else:
-#         knaf_obj = get_naf(input_file)
-#
-#     jsonlines_obj, term_ids, tok_ids = get_jsonlines(knaf_obj)
-#
-#     lang = knaf_obj.get_language()
-#     if lang != 'nl':
-#         logging.warning('ERROR! Language is {} and must be nl (Dutch)'
-#                         .format(lang))
-#         sys.exit(-1)
-#
-#     config = e2edutch.util.initialize_from_env(model_name, cfg_file)
-#     model = e2edutch.coref_model.CorefModel(config)
-#     with tf.Session() as session:
-#         model.restore(session)
-#
-#         tensorized_example = model.tensorize_example(
-#                 jsonlines_obj, is_training=False)
-#         feed_dict = {i: t for i, t in zip(
-#             model.input_tensors, tensorized_example)}
-#         _, _, _, top_span_starts, top_span_ends, top_antecedents, top_antecedent_scores = session.run(
-#             model.predictions, feed_dict=feed_dict)
-#         predicted_antecedents = model.get_predicted_antecedents(
-#             top_antecedents, top_antecedent_scores)
-#         predicted_clusters, _ = model.get_predicted_clusters(
-#             top_span_starts, top_span_ends, predicted_antecedents)
-#         jsonlines_obj["predicted_clusters"] = predicted_clusters
-#         create_coref_layer(knaf_obj, jsonlines_obj["predicted_clusters"], term_ids)
-#
-#     knaf_obj = add_linguistic_processors(knaf_obj)
-#     return knaf_obj
