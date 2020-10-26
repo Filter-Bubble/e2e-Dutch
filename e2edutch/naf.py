@@ -90,6 +90,14 @@ def create_coref_layer(knaf_obj, clusters, term_ids):
         coref_obj.set_type('entity')
         for start, end in cluster:
             coref_obj.add_span(term_ids_list[start:end+1])
+            span_text = []
+            for term_id in term_ids_list[start:end+1]:
+                word_ids = knaf_obj.get_term(term_id).get_span_ids()
+                for word_id in word_ids:
+                    word = knaf_obj.get_token(word_id).get_text()
+                    span_text.append(word)
+            span_text = ' '.join(span_text)
+            # TODO: output span_text as comment
         knaf_obj.add_coreference(coref_obj)
     return knaf_obj
 

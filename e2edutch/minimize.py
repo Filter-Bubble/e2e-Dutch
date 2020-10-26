@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import collections
 import logging
+import argparse
 
 from e2edutch import util
 from e2edutch import conll
@@ -186,28 +187,35 @@ def minimize_partition(input_path, labels, stats, word_col):
                 document_state = DocumentState()
 
 
-def minimize_partition_file(input_path, labels, stats, word_col):
-    output_path = "{}.jsonlines".format(os.path.splitext(input_path)[0])
+def minimize_partition_file(input_path, labels, stats, word_col, output_file=None):
+    if output_file is None:
+        output_path = "{}.jsonlines".format(os.path.splitext(input_path)[0])
+        output_file = open(output_path, "w")
     count = 0
     logging.info("Minimizing {}".format(input_path))
-
-    with open(output_path, "w") as output_file:
-        for document in minimize_partition(input_path, labels, stats, word_col):
-            output_file.write(json.dumps(document))
-            output_file.write("\n")
-            count += 1
+    for document in minimize_partition(input_path, labels, stats, word_col):
+        output_file.write(json.dumps(document))
+        output_file.write("\n")
+        count += 1
     logging.info("Wrote {} documents to {}".format(count, output_path))
 
+def get_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input_filename')
+    parser.add_argument('-o', '--output_file',
+                        type=argparse.FileType('w'), default=sys.stdout)
+    parser.add_argument('-v', '--verbose', action='store_true')
+    return parser
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        sys.exit(
-            "Usage: {} input file".format(sys.argv[0]))
-    input_path = sys.argv[1]
+    parser = get_parser()
+    args = parser.parse_args()
+    input_path = args.input_filename
+    output_file = args.output_file
     word_col = 2
     labels = collections.defaultdict(set)
     stats = collections.defaultdict(int)
-    minimize_partition_file(input_path, labels, stats, word_col)
+    minimize_partition_file(input_path, labels, stats, word_col, output_file)
     for k, v in labels.items():
         print("{} = [{}]".format(k, ", ".join(
             "\"{}\"".format(label) for label in v)))

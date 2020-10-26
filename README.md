@@ -15,7 +15,7 @@ pip install -r requirements.txt
 pip install .
 ```
 
-The `setup_all` script downloads the word vector files to the `data` directories. 
+The `setup_all` script downloads the word vector files to the `data` directories.
 
 ## Quick start
 The e2e-Dutch scripts can take two types of input:
@@ -24,7 +24,7 @@ The e2e-Dutch scripts can take two types of input:
 
 The model configuration are described in the file `cfg/experiments.conf`. To train a new model:
 - Make sure the config file describes the model you wish to train
-- Run `scripts/setup_train.sh`. This script converts the conll2012 data to jsonlines files, and caches the word and contextualized embeddings.
+- Run `scripts/setup_train.sh e2edutch/cfg/defaults.conf`. This script converts the conll2012 data to jsonlines files, and caches the word and contextualized embeddings.
 - If you want to enable the use of a GPU, set the environment variable:
 ```bash
 export GPU=0

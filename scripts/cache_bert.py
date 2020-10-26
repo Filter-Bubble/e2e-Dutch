@@ -31,6 +31,7 @@ def cache_dataset(data_path, out_file, tokenizer, model):
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('model_name', choices=['bertje', 'bert-nl', 'robbert'])
+    parser.add_argument('datapath')
     parser.add_argument('input_files', nargs='+')
     return parser
 
@@ -38,8 +39,9 @@ def get_parser():
 def main(args=None):
     args = get_parser().parse_args()
     model_name = args.model_name
+    datapath = args.datapath
     tokenizer, model = bert.load_bert(model_name)
-    with h5py.File("data/{}_cache.hdf5".format(model_name), "a") as out_file:
+    with h5py.File("{}/{}_cache.hdf5".format(datapath, model_name), "a") as out_file:
         for json_filename in args.input_files:
             cache_dataset(json_filename, out_file, tokenizer, model)
 
