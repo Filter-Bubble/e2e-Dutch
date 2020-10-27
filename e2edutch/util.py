@@ -3,10 +3,7 @@ import pyhocon
 import errno
 import codecs
 import collections
-import json
-import math
 import shutil
-import sys
 import logging
 import pkg_resources
 
@@ -42,9 +39,11 @@ def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
     logging.info("Running experiment: {}".format(model_name))
 
     if cfg_file is None:
-        cfg_file = pkg_resources.resource_filename("e2edutch", 'cfg/defaults.conf')
+        cfg_file = pkg_resources.resource_filename(
+            "e2edutch", 'cfg/defaults.conf')
     if model_cfg_file is None:
-        model_cfg_file = pkg_resources.resource_filename("e2edutch", 'cfg/models.conf')
+        model_cfg_file = pkg_resources.resource_filename(
+            "e2edutch", 'cfg/models.conf')
     config_base = pyhocon.ConfigFactory.parse_file(cfg_file)
     config_model = pyhocon.ConfigFactory.parse_file(model_cfg_file)[model_name]
     config = pyhocon.ConfigTree.merge_configs(config_model, config_base)
@@ -63,7 +62,8 @@ def copy_checkpoint(source, target):
 
 
 def make_summary(value_dict):
-    return tf.Summary(value=[tf.Summary.Value(tag=k, simple_value=v) for k, v in value_dict.items()])
+    return tf.Summary(value=[tf.Summary.Value(
+        tag=k, simple_value=v) for k, v in value_dict.items()])
 
 
 def create_example(text, doc_key='example'):
@@ -114,7 +114,8 @@ def maybe_divide(x, y):
 
 
 def projection(inputs, output_size, initializer=None):
-    return ffnn(inputs, 0, -1, output_size, dropout=None, output_weights_initializer=initializer)
+    return ffnn(inputs, 0, -1, output_size, dropout=None,
+                output_weights_initializer=initializer)
 
 
 def highway(inputs, num_layers, dropout):
@@ -133,7 +134,8 @@ def shape(x, dim):
     return x.get_shape()[dim].value or tf.shape(x)[dim]
 
 
-def ffnn(inputs, num_hidden_layers, hidden_size, output_size, dropout, output_weights_initializer=None):
+def ffnn(inputs, num_hidden_layers, hidden_size, output_size,
+         dropout, output_weights_initializer=None):
     if len(inputs.get_shape()) > 3:
         raise ValueError("FFNN with rank {} not supported".format(
             len(inputs.get_shape())))
@@ -147,8 +149,9 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size, dropout, output_we
         current_inputs = inputs
 
     for i in range(num_hidden_layers):
-        hidden_weights = tf.get_variable("hidden_weights_{}".format(i), [
-                                         shape(current_inputs, 1), hidden_size])
+        hidden_weights = tf.get_variable("hidden_weights_{}".format(i),
+                                         [shape(current_inputs, 1),
+                                          hidden_size])
         hidden_bias = tf.get_variable(
             "hidden_bias_{}".format(i), [hidden_size])
         current_outputs = tf.nn.relu(tf.nn.xw_plus_b(
@@ -159,7 +162,8 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size, dropout, output_we
         current_inputs = current_outputs
 
     output_weights = tf.get_variable("output_weights", [shape(
-        current_inputs, 1), output_size], initializer=output_weights_initializer)
+           current_inputs, 1), output_size],
+        initializer=output_weights_initializer)
     output_bias = tf.get_variable("output_bias", [output_size])
     outputs = tf.nn.xw_plus_b(current_inputs, output_weights, output_bias)
 
@@ -169,8 +173,8 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size, dropout, output_we
 
 
 def cnn(inputs, filter_sizes, num_filters):
-    num_words = shape(inputs, 0)
-    num_chars = shape(inputs, 1)
+    # num_words = shape(inputs, 0)
+    # num_chars = shape(inputs, 1)
     input_size = shape(inputs, 2)
     outputs = []
     for i, filter_size in enumerate(filter_sizes):
@@ -196,8 +200,8 @@ def batch_gather(emb, indices):
         emb_size = 1
     # [batch_size * seqlen, emb]
     flattened_emb = tf.reshape(emb, [batch_size * seqlen, emb_size])
-    offset = tf.expand_dims(tf.range(batch_size) *
-                            seqlen, 1)  # [batch_size, 1]
+    offset = tf.expand_dims(tf.range(batch_size)
+                            * seqlen, 1)  # [batch_size, 1]
     # [batch_size, num_indices, emb]
     gathered = tf.gather(flattened_emb, indices + offset)
     if len(emb.get_shape()) == 2:
@@ -297,7 +301,8 @@ class CustomLSTMCell(tf.nn.rnn_cell.RNNCell):
 
     @property
     def state_size(self):
-        return tf.nn.rnn_cell.LSTMStateTuple(self.output_size, self.output_size)
+        return tf.nn.rnn_cell.LSTMStateTuple(
+            self.output_size, self.output_size)
 
     @property
     def output_size(self):
@@ -309,11 +314,12 @@ class CustomLSTMCell(tf.nn.rnn_cell.RNNCell):
 
     def __call__(self, inputs, state, scope=None):
         """Long short-term memory cell (LSTM)."""
-        with tf.variable_scope(scope or type(self).__name__):  # "CustomLSTMCell"
+        with tf.variable_scope(scope or type(self).__name__):  # CustomLSTMCell
             c, h = state
             h *= self._dropout_mask
             concat = projection(
-                tf.concat([inputs, h], 1), 3 * self.output_size, initializer=self._initializer)
+                tf.concat([inputs, h], 1), 3 * self.output_size,
+                initializer=self._initializer)
             i, j, o = tf.split(concat, num_or_size_splits=3, axis=1)
             i = tf.sigmoid(i)
             new_c = (1 - i) * c + i * tf.tanh(j)

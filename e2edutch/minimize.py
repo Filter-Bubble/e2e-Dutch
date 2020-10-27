@@ -2,8 +2,6 @@ import re
 import os
 import sys
 import json
-import tempfile
-import subprocess
 import collections
 import logging
 import argparse
@@ -39,7 +37,6 @@ class DocumentState(object):
         assert self.doc_key is not None
         assert len(self.text) == 0
         assert len(self.sentences) > 0
-        #assert len(self.constituents) > 0
         assert len(self.const_stack) == 0
         assert len(self.ner_stack) == 0
         assert all(len(s) == 0 for s in self.coref_stacks.values())
@@ -118,7 +115,8 @@ def handle_line(line, document_state, labels, stats, word_col):
     begin_document_match = re.match(conll.BEGIN_DOCUMENT_REGEX, line)
     if begin_document_match:
         document_state.assert_empty()
-        document_state.doc_key = conll.get_doc_key(*begin_document_match.groups())
+        document_state.doc_key = conll.get_doc_key(
+            *begin_document_match.groups())
         return None
     elif line.startswith("#end document"):
         if len(document_state.text) > 0:  # no newline before end document
@@ -149,12 +147,11 @@ def handle_line(line, document_state, labels, stats, word_col):
             return None
         assert len(row) >= 4
 
-
         word = normalize_word(row[word_col])
         coref = row[-1]
 
-        word_index = len(document_state.text) + sum(len(s)
-                                                    for s in document_state.sentences)
+        word_index = (len(document_state.text)
+                      + sum(len(s) for s in document_state.sentences))
         document_state.text.append(word)
 
         if coref != "-" and coref != '_':
@@ -187,7 +184,8 @@ def minimize_partition(input_path, labels, stats, word_col):
                 document_state = DocumentState()
 
 
-def minimize_partition_file(input_path, labels, stats, word_col, output_file=None):
+def minimize_partition_file(
+        input_path, labels, stats, word_col, output_file=None):
     if output_file is None:
         output_path = "{}.jsonlines".format(os.path.splitext(input_path)[0])
         output_file = open(output_path, "w")
@@ -199,6 +197,7 @@ def minimize_partition_file(input_path, labels, stats, word_col, output_file=Non
         count += 1
     logging.info("Wrote {} documents to {}".format(count, output_path))
 
+
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_filename')
@@ -206,6 +205,7 @@ def get_parser():
                         type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('-v', '--verbose', action='store_true')
     return parser
+
 
 if __name__ == "__main__":
     parser = get_parser()

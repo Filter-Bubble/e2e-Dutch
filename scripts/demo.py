@@ -1,18 +1,16 @@
-from six.moves import input
+import logging
+import argparse
+import e2edutch.util
+import e2edutch.coref_model as cm
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-import e2edutch.coref_model as cm
-import e2edutch.util
-import argparse
-import sys
-import logging
 
 
 def print_predictions(example):
     words = e2edutch.util.flatten(example["sentences"])
     for cluster in example["predicted_clusters"]:
         print(u"Predicted cluster: {}".format(
-            [" ".join(words[m[0]:m[1]+1]) for m in cluster]))
+            [" ".join(words[m[0]:m[1] + 1]) for m in cluster]))
 
 
 def make_predictions(text, model):
@@ -32,10 +30,12 @@ def make_predictions(text, model):
     example["head_scores"] = head_scores.tolist()
     return example
 
+
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('config')
-    parser.add_argument('input_file', type=argparse.FileType('r')) #, default=sys.stdin)
+    # , default=sys.stdin)
+    parser.add_argument('input_file', type=argparse.FileType('r'))
     parser.add_argument('--cfg_file',
                         type=str,
                         default=None,
@@ -52,7 +52,8 @@ if __name__ == "__main__":
     args = get_parser().parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
-    config = e2edutch.util.initialize_from_env(args.config, args.cfg_file, args.model_cfg_file)
+    config = e2edutch.util.initialize_from_env(
+        args.config, args.cfg_file, args.model_cfg_file)
     model = cm.CorefModel(config)
     with tf.Session() as session:
         model.restore(session)

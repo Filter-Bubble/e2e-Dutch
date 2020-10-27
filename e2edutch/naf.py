@@ -49,12 +49,12 @@ def get_naf_from_sentences(sentences):
             token_obj = KafNafParserPy.Cwf(type=naf_obj.get_type())
             token_id = 'w{}'.format(wcount)
             token_length = len(token)
-            offsets[wcount] = txt.find(token, offsets.get(wcount-1, 0))
+            offsets[wcount] = txt.find(token, offsets.get(wcount - 1, 0))
             token_obj.set_id(token_id)
             token_obj.set_length(str(token_length))
             # token_obj.set_offset(str(offset)) # Is this correct????
             token_obj.set_para('1')
-            token_obj.set_sent(str(sid+1))
+            token_obj.set_sent(str(sid + 1))
             token_obj.set_text(token)
             token_obj.set_offset(str(offsets[wcount]))
             token_ids_sub.append(token_id)
@@ -67,8 +67,9 @@ def get_naf_from_sentences(sentences):
     for sid, (sentence, token_ids_sub) in enumerate(zip(sentences, token_ids)):
         term_ids_sub = []
         logging.info('Creating the term layer...')
-        for num_token, (token, token_id) in enumerate(zip(sentence, token_ids_sub)):
-            new_term_id = 't_'+str(count_terms)
+        for num_token, (token, token_id) in enumerate(
+                zip(sentence, token_ids_sub)):
+            new_term_id = 't_' + str(count_terms)
             count_terms += 1
             term_ids_sub.append(new_term_id)
             term_obj = KafNafParserPy.Cterm(type=naf_obj.get_type())
@@ -86,12 +87,12 @@ def create_coref_layer(knaf_obj, clusters, term_ids):
     term_ids_list = list(itertools.chain.from_iterable(term_ids))
     for cluster_id, cluster in enumerate(clusters):
         coref_obj = KafNafParserPy.Ccoreference(type=knaf_obj.get_type())
-        coref_obj.set_id('co{}'.format(cluster_id+1))
+        coref_obj.set_id('co{}'.format(cluster_id + 1))
         coref_obj.set_type('entity')
         for start, end in cluster:
-            coref_obj.add_span(term_ids_list[start:end+1])
+            coref_obj.add_span(term_ids_list[start:end + 1])
             span_text = []
-            for term_id in term_ids_list[start:end+1]:
+            for term_id in term_ids_list[start:end + 1]:
                 word_ids = knaf_obj.get_term(term_id).get_span_ids()
                 for word_id in word_ids:
                     word = knaf_obj.get_token(word_id).get_text()

@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 import os
-import sys
 import time
 import argparse
 import logging
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from e2edutch import util
 from e2edutch import coref_model as cm
 
-#import tensorflow as tf
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -39,12 +37,13 @@ def get_parser():
     return parser
 
 
-
 def main(args=None):
     args = get_parser().parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
-    config = util.initialize_from_env(args.config, args.cfg_file, args.model_cfg_file)
+    config = util.initialize_from_env(args.config,
+                                      args.cfg_file,
+                                      args.model_cfg_file)
     # Overwrite train and eval file if specified
     if args.train is not None:
         config['train_path'] = args.train
@@ -85,8 +84,10 @@ def main(args=None):
                 steps_per_second = tf_global_step / total_time
 
                 average_loss = accumulated_loss / report_frequency
-                print("[{}] loss={:.2f}, steps/s={:.2f}".format(tf_global_step,
-                                                                average_loss, steps_per_second))
+                print("[{}] loss={:.2f}, steps/s={:.2f}"
+                      .format(tf_global_step,
+                              average_loss,
+                              steps_per_second))
                 writer.add_summary(util.make_summary(
                     {"loss": average_loss}), tf_global_step)
                 accumulated_loss = 0.0
@@ -99,7 +100,8 @@ def main(args=None):
                 if eval_f1 > max_f1:
                     max_f1 = eval_f1
                     util.copy_checkpoint(os.path.join(
-                        log_dir, "model-{}".format(tf_global_step)), os.path.join(log_dir, "model.max.ckpt"))
+                        log_dir, "model-{}".format(tf_global_step)),
+                                         os.path.join(log_dir, "model.max.ckpt"))
 
                 writer.add_summary(eval_summary, tf_global_step)
                 writer.add_summary(util.make_summary(
@@ -107,6 +109,7 @@ def main(args=None):
 
                 print("[{}] evaL_f1={:.2f}, max_f1={:.2f}".format(
                     tf_global_step, eval_f1, max_f1))
+
 
 if __name__ == "__main__":
     main()

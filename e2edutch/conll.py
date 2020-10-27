@@ -1,13 +1,11 @@
 import re
-import os
-import sys
-import json
 import tempfile
 import subprocess
 import operator
 import collections
 
-BEGIN_DOCUMENT_REGEX = re.compile(r"#begin document \(?([^\);]*)\)?;?(?: part (\d+))?")
+BEGIN_DOCUMENT_REGEX = re.compile(
+    r"#begin document \(?([^\);]*)\)?;?(?: part (\d+))?")
 COREF_RESULTS_REGEX = re.compile(
     r".*Coreference: Recall: \([0-9.]+ / [0-9.]+\) ([0-9.]+)%\tPrecision: \([0-9.]+ / [0-9.]+\) ([0-9.]+)%\tF1: ([0-9.]+)%.*", re.DOTALL)
 
@@ -18,15 +16,17 @@ def get_doc_key(doc_id, part=None):
     else:
         return '{}.p.{}'.format(doc_id, part)
 
+
 def get_reverse_doc_key(doc_key):
     segments = doc_key.split('.p.')
-    if len(segments)>1:
+    if len(segments) > 1:
         part = segments[-1]
         doc_id = '.p.'.join(segments[:-1])
     else:
         doc_id = doc_key
         part = None
     return doc_id, part
+
 
 def get_prediction_map(predictions):
     prediction_map = {}
@@ -59,7 +59,9 @@ def output_conll(output_file, sentences, predictions):
         if part is None:
             output_file.write("#begin document ({});\n\n".format(doc_id))
         else:
-            output_file.write("#begin document ({}); part {}\n\n".format(doc_id, part))
+            output_file.write(
+                "#begin document ({}); part {}\n\n".format(
+                    doc_id, part))
         word_index = 0
         for sent in sentences[doc_key]:
             for i, word in enumerate(sent):
@@ -75,7 +77,7 @@ def output_conll(output_file, sentences, predictions):
                         coref_list.append("({}".format(cluster_id))
                 coref = '-' if len(coref_list) == 0 else "|".join(coref_list)
                 line = '\t'.join([doc_id, str(i), word, coref])
-                output_file.write(line+'\n')
+                output_file.write(line + '\n')
                 word_index += 1
             output_file.write('\n')
         output_file.write('#end document\n')
@@ -119,7 +121,8 @@ def output_conll_align(input_file, output_file, predictions):
             word_index += 1
 
 
-def official_conll_eval(gold_path, predicted_path, metric, official_stdout=False):
+def official_conll_eval(gold_path, predicted_path,
+                        metric, official_stdout=False):
     cmd = ["conll-2012/scorer/v8.01/scorer.pl",
            metric, gold_path, predicted_path, "none"]
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
@@ -142,8 +145,10 @@ def official_conll_eval(gold_path, predicted_path, metric, official_stdout=False
 
 
 def evaluate_conll(gold_path, predictions, official_stdout=False):
-    with tempfile.NamedTemporaryFile(delete=False, mode="w") as prediction_file:
+    with tempfile.NamedTemporaryFile(delete=False, mode="w") as pred_file:
         with open(gold_path, "r") as gold_file:
-            output_conll_align(gold_file, prediction_file, predictions)
-        print("Predicted conll file: {}".format(prediction_file.name))
-    return {m: official_conll_eval(gold_file.name, prediction_file.name, m, official_stdout) for m in ("muc", "bcub", "ceafe")}
+            output_conll_align(gold_file, pred_file, predictions)
+        print("Predicted conll file: {}".format(pred_file.name))
+    return {m: official_conll_eval(
+        gold_file.name, pred_file.name, m, official_stdout)
+        for m in ("muc", "bcub", "ceafe")}

@@ -1,16 +1,17 @@
+import sys
+import json
+import os
+import collections
+import argparse
+import logging
+
+from lxml import etree
+
 from e2edutch import conll
 from e2edutch import minimize
 from e2edutch import util
 from e2edutch import coref_model as cm
 from e2edutch import naf
-
-import sys
-import json
-import os
-from lxml import etree
-import collections
-import argparse
-import logging
 
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
@@ -26,9 +27,9 @@ def get_parser():
                         choices=['conll', 'jsonlines', 'naf'])
     parser.add_argument('-c', '--word_col', type=int, default=2)
     parser.add_argument('--cfg_file',
-        type=str,
-        default=None,
-        help="config file")
+                        type=str,
+                        default=None,
+                        help="config file")
     parser.add_argument('-v', '--verbose', action='store_true')
     return parser
 
@@ -52,7 +53,8 @@ def main(args=None):
     ext_input = os.path.splitext(input_filename)[-1]
     if ext_input not in ['.conll', '.jsonlines', '.txt', '.naf']:
         raise Exception(
-            'Input file should be .naf, .conll, .txt or .jsonlines, but is {}.'.format(ext_input))
+            'Input file should be .naf, .conll, .txt or .jsonlines, but is {}.'
+            .format(ext_input))
 
     if ext_input == '.conll':
         labels = collections.defaultdict(set)
@@ -102,19 +104,33 @@ def main(args=None):
             # Create naf obj if input format was not naf
             if ext_input != '.naf':
                 # To do: add linguistic processing layers for terms and tokens
-                logging.warn('Outputting NAF when input was not naf, no dependency information available')
+                logging.warn(
+                    'Outputting NAF when input was not naf,'
+                    + 'no dependency information available')
                 for doc_key in sentences:
-                    naf_obj, term_ids = naf.get_naf_from_sentences(sentences[doc_key])
-                    naf_obj = naf.create_coref_layer(naf_obj, predictions[doc_key], term_ids)
+                    naf_obj, term_ids = naf.get_naf_from_sentences(
+                        sentences[doc_key])
+                    naf_obj = naf.create_coref_layer(
+                        naf_obj, predictions[doc_key], term_ids)
                     naf_obj = naf.add_linguistic_processors(naf_obj)
-                    output_file.write(etree.tostring(naf_obj.root, pretty_print=True, encoding=str))
+                    output_file.write(
+                        etree.tostring(
+                            naf_obj.root,
+                            pretty_print=True,
+                            encoding=str))
                     # To do, make sepearate outputs?
-                    #TO do, use dependency information from conll?
+                    # TO do, use dependency information from conll?
             else:
                 # We only have one input doc
-                naf_obj = naf.create_coref_layer(naf_obj, example["predicted_clusters"], term_ids)
+                naf_obj = naf.create_coref_layer(
+                    naf_obj, example["predicted_clusters"], term_ids)
                 naf_obj = naf.add_linguistic_processors(naf_obj)
-                output_file.write(etree.tostring(naf_obj.root, pretty_print=True, encoding=str))
+                output_file.write(
+                    etree.tostring(
+                        naf_obj.root,
+                        pretty_print=True,
+                        encoding=str))
+
 
 if __name__ == "__main__":
     main()

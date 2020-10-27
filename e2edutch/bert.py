@@ -1,8 +1,7 @@
 import numpy as np
 import torch
-from transformers import RobertaTokenizer, RobertaModel, BertTokenizer, BertModel, BertForPreTraining, BertConfig
-
-import logging
+from transformers import RobertaTokenizer, RobertaModel, BertTokenizer
+from transformers import BertModel, BertForPreTraining, BertConfig
 
 
 def load_bert(model_name):
@@ -10,7 +9,8 @@ def load_bert(model_name):
         tokenizer = RobertaTokenizer.from_pretrained("pdelobelle/robBERT-base")
         model = RobertaModel.from_pretrained("pdelobelle/robBERT-base")
     elif model_name == 'bertje':
-        tokenizer = BertTokenizer.from_pretrained("wietsedv/bert-base-dutch-cased")
+        tokenizer = BertTokenizer.from_pretrained(
+            "wietsedv/bert-base-dutch-cased")
         model = BertModel.from_pretrained("wietsedv/bert-base-dutch-cased")
     elif model_name == 'bert-nl':
         tokenizer = BertTokenizer.from_pretrained("data/bert-nl")
@@ -25,9 +25,11 @@ def load_bert(model_name):
 def encode_sentences(sentences, tokenizer, model):
     # Use BERT tokenizer
     sentences_tokenized = [
-        [tokenizer.tokenize(word) for word in sentence] for sentence in sentences]
+        [tokenizer.tokenize(word) for word in sentence]
+        for sentence in sentences]
     sentences_tokenized_flat = [
-        [tok for word in sentence for tok in word] for sentence in sentences_tokenized]
+        [tok for word in sentence for tok in word]
+        for sentence in sentences_tokenized]
     indices_flat = [[i for i, word in enumerate(
         sentence) for tok in word] for sentence in sentences_tokenized]
 

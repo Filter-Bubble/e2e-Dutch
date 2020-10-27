@@ -7,6 +7,7 @@ import json
 import argparse
 import logging
 
+
 def get_parser():
     parser = argparse.ArgumentParser()
 
@@ -37,10 +38,10 @@ if __name__ == "__main__":
     total_lines = 0
     kept_lines = 0
     for line in args.embedding_file.readlines():
-            total_lines += 1
-            word = line.split()[0]
-            if word in words_to_keep:
-                kept_lines += 1
-                args.out_file.write(line)
+        total_lines += 1
+        word = line.split()[0]
+        if word in words_to_keep:
+            kept_lines += 1
+            args.out_file.write(line)
 
     logging.info("Kept {} out of {} lines.".format(kept_lines, total_lines))

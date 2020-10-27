@@ -6,7 +6,8 @@ from scipy.optimize import linear_sum_assignment as linear_assignment
 def f1(p_num, p_den, r_num, r_den, beta=1):
     p = 0 if p_den == 0 else p_num / float(p_den)
     r = 0 if r_den == 0 else r_num / float(r_den)
-    return 0 if p + r == 0 else (1 + beta * beta) * p * r / (beta * beta * p + r)
+    return 0 if p + r == 0 else (1 + beta * beta) * \
+        p * r / (beta * beta * p + r)
 
 
 class CorefEvaluator(object):
@@ -21,10 +22,12 @@ class CorefEvaluator(object):
         return sum(e.get_f1() for e in self.evaluators) / len(self.evaluators)
 
     def get_recall(self):
-        return sum(e.get_recall() for e in self.evaluators) / len(self.evaluators)
+        return sum(e.get_recall()
+                   for e in self.evaluators) / len(self.evaluators)
 
     def get_precision(self):
-        return sum(e.get_precision() for e in self.evaluators) / len(self.evaluators)
+        return sum(e.get_precision()
+                   for e in self.evaluators) / len(self.evaluators)
 
     def get_prf(self):
         return self.get_precision(), self.get_recall(), self.get_f1()
@@ -51,7 +54,8 @@ class Evaluator(object):
         self.r_den += rd
 
     def get_f1(self):
-        return f1(self.p_num, self.p_den, self.r_num, self.r_den, beta=self.beta)
+        return f1(self.p_num, self.p_den, self.r_num,
+                  self.r_den, beta=self.beta)
 
     def get_recall(self):
         return 0 if self.r_num == 0 else self.r_num / float(self.r_den)

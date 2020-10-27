@@ -30,6 +30,6 @@ def get_parser():
     return parser
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     args = get_parser().parse_args()
     get_char_vocab(args.input_filenames, args.output_file)
