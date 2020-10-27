@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/Filter-Bubble/e2e-Dutch.svg?branch=master)](https://travis-ci.org/Filter-Bubble/e2e-Dutch)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Filter-Bubble/e2e-Dutch/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/Filter-Bubble/e2e-Dutch/?branch=master)
 # e2e-Dutch
 Code for e2e coref model in Dutch. The code is based on the [original e2e model for English](https://github.com/kentonl/e2e-coref), and modified to work for Dutch.
 If you make use of this code, please also cite [the original e2e paper](https://arxiv.org/abs/1804.05392).
