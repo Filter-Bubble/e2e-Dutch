@@ -1,10 +1,12 @@
 # Make data directory
 mkdir -p data
 
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz
-gzip -d cc.nl.300.vec.gz
-tail -n +2 cc.nl.300.vec > data/fasttext.300.vec
-rm cc.nl.300.vec
+if [ ! -f data/fasttext.300.vec ]; then
+  wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz
+  gzip -d cc.nl.300.vec.gz
+  tail -n +2 cc.nl.300.vec > data/fasttext.300.vec
+  rm cc.nl.300.vec
+fi
 
 
 # Download BERT-NL model
