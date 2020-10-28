@@ -1,6 +1,7 @@
 import sys
 import json
 import os
+import io
 import collections
 import argparse
 import logging
@@ -113,11 +114,9 @@ def main(args=None):
                     naf_obj = naf.create_coref_layer(
                         naf_obj, predictions[doc_key], term_ids)
                     naf_obj = naf.add_linguistic_processors(naf_obj)
-                    output_file.write(
-                        etree.tostring(
-                            naf_obj.root,
-                            pretty_print=True,
-                            encoding=str))
+                    buffer = io.BytesIO()
+                    naf_obj.dump(buffer)
+                    output_file.write(buffer.getvalue().decode('utf-8'))
                     # To do, make sepearate outputs?
                     # TO do, use dependency information from conll?
             else:
@@ -125,11 +124,9 @@ def main(args=None):
                 naf_obj = naf.create_coref_layer(
                     naf_obj, example["predicted_clusters"], term_ids)
                 naf_obj = naf.add_linguistic_processors(naf_obj)
-                output_file.write(
-                    etree.tostring(
-                        naf_obj.root,
-                        pretty_print=True,
-                        encoding=str))
+                buffer = io.BytesIO()
+                naf_obj.dump(buffer)
+                output_file.write(buffer.getvalue().decode('utf-8'))
 
 
 if __name__ == "__main__":
