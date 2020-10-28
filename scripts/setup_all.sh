@@ -1,10 +1,12 @@
 # Make data directory
 mkdir -p data
 
-wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz
-gzip -d cc.nl.300.vec.gz
-tail -n +2 cc.nl.300.vec > data/fasttext.300.vec
-rm cc.nl.300.vec
+if [ ! -f data/fasttext.300.vec ]; then
+  wget https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz
+  gzip -d cc.nl.300.vec.gz
+  tail -n +2 cc.nl.300.vec > data/fasttext.300.vec
+  rm cc.nl.300.vec
+fi
 
 
 # Download BERT-NL model
@@ -14,9 +16,10 @@ rm cc.nl.300.vec
 # rm dutch_cased_punct_L-12_H-768_A-12.zip
 
 # Download trained e2e model_
-wget https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download -O model.zip
-unzip model.zip
-rm model.zip
+if [ ! -f model.zip ]; then
+  wget https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download -O model.zip
+  unzip model.zip
+fi
 
 # Build custom kernels.
 TF_CFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
