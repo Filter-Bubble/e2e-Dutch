@@ -16,9 +16,10 @@ fi
 # rm dutch_cased_punct_L-12_H-768_A-12.zip
 
 # Download trained e2e model_
-wget https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download -O model.zip
-unzip model.zip
-rm model.zip
+if [ ! -f model.zip ]; then
+  wget https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download -O model.zip
+  unzip model.zip
+fi
 
 # Build custom kernels.
 TF_CFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
