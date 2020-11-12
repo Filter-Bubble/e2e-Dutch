@@ -1,11 +1,15 @@
 import setuptools
+import os
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+with open(os.path.join(os.path.dirname(__file__), 'e2edutch/__version__.py')) as versionpy:
+    exec(versionpy.read())
+
 setuptools.setup(
     name="e2e-Dutch",
-    version="0.0.1",
+    version=__version__,
     author="Dafne van Kuppevelt",
     author_email="d.vankuppevelt@esciencecenter.nl",
     description="Coreference resolution with e2e for Dutch",
@@ -21,21 +25,21 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     include_package_data=True,
-    package_data={#('cfg', ['cfg/*']),
-                'e2edutch': ['lib/coref_kernels.so',
-                            'cfg/*.conf']},
+    package_data={  # ('cfg', ['cfg/*']),
+        'e2edutch': ['lib/coref_kernels.so',
+                     'cfg/*.conf']},
     test_suite='test',
     python_requires='>=3.6',
     install_requires=[
-            "tensorflow>=2.0.0",
-            "h5py",
-            "nltk",
-            "pyhocon",
-            "scipy",
-            "scikit-learn",
-            "torch",
-            "transformers"
-            ],
+        "tensorflow>=2.0.0",
+        "h5py",
+        "nltk",
+        "pyhocon",
+        "scipy",
+        "scikit-learn",
+        "torch",
+        "transformers"
+    ],
     tests_require=[
         'pytest',
         'pytest-cov',
