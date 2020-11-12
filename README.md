@@ -19,29 +19,9 @@ pip install .
 The `setup_all` script downloads the word vector files to the `data` directories. It also builds the application-specific tensorflow kernels.
 
 ## Quick start
-The e2e-Dutch scripts can take two types of input:
-- Files in the [conll-2012 format](http://conll.cemantix.org/2012/data.html)
-- `.jsonlines` files, where each line is a json object of a document.
-
-The model configuration are described in the file `cfg/models.conf`. The user-specific configurations (such as data directory, data files, etc) can be provided in a separate config file, the defaults are specified in `cfg/defaults.conf`.
-
-
-To train a new model:
-- Make sure the model config file describes the model you wish to train
-- Make sure your config file includes the data files you want to use for training
-- Run `scripts/setup_train.sh e2edutch/cfg/defaults.conf`. This script converts the conll2012 data to jsonlines files, and caches the word and contextualized embeddings.
-- If you want to enable the use of a GPU, set the environment variable:
-```bash
-export GPU=0
+A pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the nltk package will be used for tokenization).
 ```
-- Run the training script:
-```bash
-python scripts/train.py <model-name>
-```
-
-A trained model can be used to predict coreferences on a conll 2012 files, json files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the nltk package will be used for tokenization).
-```
-predict.py [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}]
+python scripts/predict.py [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}]
                   [-c WORD_COL] [--cfg_file CFG_FILE] [-v]
                   config input_filename
 
@@ -59,3 +39,21 @@ optional arguments:
 
 
 ```
+The user-specific configurations (such as data directory, data files, etc) can be provided in a separate config file, the defaults are specified in `cfg/defaults.conf`.
+
+
+## Train your own model
+To train a new model:
+- Make sure the model config file (default: `e2edutch/cfg/models.conf`) describes the model you wish to train
+- Make sure your config file (default: `e2edutch/cfg/defaults.conf`) includes the data files you want to use for training
+- Run `scripts/setup_train.sh e2edutch/cfg/defaults.conf`. This script converts the conll2012 data to jsonlines files, and caches the word and contextualized embeddings.
+- If you want to enable the use of a GPU, set the environment variable:
+```bash
+export GPU=0
+```
+- Run the training script:
+```bash
+python scripts/train.py <model-name>
+```
+
+
