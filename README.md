@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/Filter-Bubble/e2e-Dutch.svg?branch=master)](https://travis-ci.org/Filter-Bubble/e2e-Dutch)
 ![Python package](https://github.com/Filter-Bubble/e2e-Dutch/workflows/Python%20package/badge.svg)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Filter-Bubble/e2e-Dutch/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/Filter-Bubble/e2e-Dutch/?branch=master)
 # e2e-Dutch
@@ -56,5 +55,3 @@ export GPU=0
 ```bash
 python scripts/train.py <model-name>
 ```
-
-
