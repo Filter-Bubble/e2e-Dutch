@@ -13,6 +13,7 @@ jobs:
       os: osx
       osx_image: xcode11.2
       language: generic
+      env: PYTHON=37
 
 # command to install dependencies
 install:
