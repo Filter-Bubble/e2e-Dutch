@@ -1,0 +1,16 @@
+{
+    "creators": [
+        {
+            "name": "van Kuppevelt, Dafne",
+            "orcid": "0000-0002-2662-1994"
+        },
+        {
+            "name": "Attema, Jisk"
+        }
+    ],
+    "description": "Code for e2e coref model in Dutch. The code is based on the original e2e model for English (https://github.com/kentonl/e2e-coref), and modified to work for Dutch.",
+    "license": {
+        "id": "Apache-2.0"
+    },
+    "title": "e2e-Dutch"
+}
