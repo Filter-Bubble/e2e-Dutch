@@ -1,6 +1,8 @@
 ![Python package](https://github.com/Filter-Bubble/e2e-Dutch/workflows/Python%20package/badge.svg)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Filter-Bubble/e2e-Dutch/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/Filter-Bubble/e2e-Dutch/?branch=master)
 [![codecov](https://codecov.io/gh/Filter-Bubble/e2e-coref/branch/master/graph/badge.svg)](https://codecov.io/gh/Filter-Bubble/e2e-coref)
+[![DOI](https://zenodo.org/badge/276878416.svg)](https://zenodo.org/badge/latestdoi/276878416)
+
 
 # e2e-Dutch
 Code for e2e coref model in Dutch. The code is based on the [original e2e model for English](https://github.com/kentonl/e2e-coref), and modified to work for Dutch.
