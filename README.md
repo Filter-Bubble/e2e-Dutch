@@ -6,7 +6,7 @@
 
 # e2e-Dutch
 Code for e2e coref model in Dutch. The code is based on the [original e2e model for English](https://github.com/kentonl/e2e-coref), and modified to work for Dutch.
-If you make use of this code, please also cite [the original e2e paper](https://arxiv.org/abs/1804.05392).
+If you make use of this code, please [cite it](#citing-this-code) and also cite [the original e2e paper](https://arxiv.org/abs/1804.05392).
 
 ## Installation
 Requirements:
@@ -59,3 +59,17 @@ export GPU=0
 ```bash
 python -m e2edutch.train <model-name>
 ```
+## Citing this code
+If you use this code in your research, please cite it as follows:
+```
+@misc{YourReferenceHere,
+author = {
+            Dafne van Kuppevelt and
+            Jisk Attema
+         },
+title  = {e2e-Dutch},
+doi    = {10.5281/zenodo.4146960},
+url    = {https://github.com/Filter-Bubble/e2e-Dutch}
+}
+```
+As the code is largely based on [original e2e model for English](https://github.com/kentonl/e2e-coref), please make sure to also cite [the original e2e paper](https://arxiv.org/abs/1804.05392).
