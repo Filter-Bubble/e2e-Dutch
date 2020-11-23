@@ -25,7 +25,7 @@ The `setup_all` script downloads the word vector files to the `data` directories
 ## Quick start
 A pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the nltk package will be used for tokenization).
 ```
-python scripts/predict.py [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}]
+python -m e2edutch.predict [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}]
                   [-c WORD_COL] [--cfg_file CFG_FILE] [-v]
                   config input_filename
 
@@ -57,5 +57,5 @@ export GPU=0
 ```
 - Run the training script:
 ```bash
-python scripts/train.py <model-name>
+python -m e2edutch.train <model-name>
 ```

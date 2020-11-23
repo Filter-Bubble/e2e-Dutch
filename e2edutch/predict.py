@@ -6,8 +6,6 @@ import collections
 import argparse
 import logging
 
-from lxml import etree
-
 from e2edutch import conll
 from e2edutch import minimize
 from e2edutch import util
