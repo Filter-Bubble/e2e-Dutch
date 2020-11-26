@@ -3,8 +3,7 @@ import os
 import time
 import argparse
 import logging
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 
 from e2edutch import util
 from e2edutch import coref_model as cm
@@ -56,15 +55,15 @@ def main(args=None):
     eval_frequency = config["eval_frequency"]
 
     model = cm.CorefModel(config)
-    saver = tf.train.Saver()
+    saver = tf.compat.v1.train.Saver()
 
     log_dir = config["log_dir"]
-    writer = tf.summary.FileWriter(log_dir, flush_secs=20)
+    writer = tf.compat.v1.summary.FileWriter(log_dir, flush_secs=20)
 
     max_f1 = 0
 
-    with tf.Session() as session:
-        session.run(tf.global_variables_initializer())
+    with tf.compat.v1.Session() as session:
+        session.run(tf.compat.v1.global_variables_initializer())
         model.start_enqueue_thread(session)
         accumulated_loss = 0.0
 
@@ -101,7 +100,7 @@ def main(args=None):
                     max_f1 = eval_f1
                     util.copy_checkpoint(os.path.join(
                         log_dir, "model-{}".format(tf_global_step)),
-                                         os.path.join(log_dir, "model.max.ckpt"))
+                        os.path.join(log_dir, "model.max.ckpt"))
 
                 writer.add_summary(eval_summary, tf_global_step)
                 writer.add_summary(util.make_summary(

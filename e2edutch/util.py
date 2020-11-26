@@ -8,8 +8,7 @@ import logging
 import pkg_resources
 
 import numpy as np
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 
 
 def get_data_dir(config):
@@ -62,7 +61,7 @@ def copy_checkpoint(source, target):
 
 
 def make_summary(value_dict):
-    return tf.Summary(value=[tf.Summary.Value(
+    return tf.compat.v1.Summary(value=[tf.compat.v1.Summary.Value(
         tag=k, simple_value=v) for k, v in value_dict.items()])
 
 
@@ -120,18 +119,18 @@ def projection(inputs, output_size, initializer=None):
 
 def highway(inputs, num_layers, dropout):
     for i in range(num_layers):
-        with tf.variable_scope("highway_{}".format(i)):
+        with tf.compat.v1.variable_scope("highway_{}".format(i)):
             j, f = tf.split(projection(inputs, 2 * shape(inputs, -1)), 2, -1)
             f = tf.sigmoid(f)
             j = tf.nn.relu(j)
             if dropout is not None:
-                j = tf.nn.dropout(j, dropout)
+                j = tf.nn.dropout(j, 1 - (dropout))
             inputs = f * j + (1 - f) * inputs
     return inputs
 
 
 def shape(x, dim):
-    return x.get_shape()[dim].value or tf.shape(x)[dim]
+    return x.get_shape()[dim].value or tf.shape(input=x)[dim]
 
 
 def ffnn(inputs, num_hidden_layers, hidden_size, output_size,
@@ -149,23 +148,23 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size,
         current_inputs = inputs
 
     for i in range(num_hidden_layers):
-        hidden_weights = tf.get_variable("hidden_weights_{}".format(i),
+        hidden_weights = tf.compat.v1.get_variable("hidden_weights_{}".format(i),
                                          [shape(current_inputs, 1),
                                           hidden_size])
-        hidden_bias = tf.get_variable(
+        hidden_bias = tf.compat.v1.get_variable(
             "hidden_bias_{}".format(i), [hidden_size])
-        current_outputs = tf.nn.relu(tf.nn.xw_plus_b(
+        current_outputs = tf.nn.relu(tf.compat.v1.nn.xw_plus_b(
             current_inputs, hidden_weights, hidden_bias))
 
         if dropout is not None:
-            current_outputs = tf.nn.dropout(current_outputs, dropout)
+            current_outputs = tf.nn.dropout(current_outputs, 1 - (dropout))
         current_inputs = current_outputs
 
-    output_weights = tf.get_variable("output_weights", [shape(
-           current_inputs, 1), output_size],
+    output_weights = tf.compat.v1.get_variable("output_weights", [shape(
+        current_inputs, 1), output_size],
         initializer=output_weights_initializer)
-    output_bias = tf.get_variable("output_bias", [output_size])
-    outputs = tf.nn.xw_plus_b(current_inputs, output_weights, output_bias)
+    output_bias = tf.compat.v1.get_variable("output_bias", [output_size])
+    outputs = tf.compat.v1.nn.xw_plus_b(current_inputs, output_weights, output_bias)
 
     if len(inputs.get_shape()) == 3:
         outputs = tf.reshape(outputs, [batch_size, seqlen, output_size])
@@ -178,14 +177,14 @@ def cnn(inputs, filter_sizes, num_filters):
     input_size = shape(inputs, 2)
     outputs = []
     for i, filter_size in enumerate(filter_sizes):
-        with tf.variable_scope("conv_{}".format(i)):
-            w = tf.get_variable("w", [filter_size, input_size, num_filters])
-            b = tf.get_variable("b", [num_filters])
+        with tf.compat.v1.variable_scope("conv_{}".format(i)):
+            w = tf.compat.v1.get_variable("w", [filter_size, input_size, num_filters])
+            b = tf.compat.v1.get_variable("b", [num_filters])
         # [num_words, num_chars - filter_size, num_filters]
-        conv = tf.nn.conv1d(inputs, w, stride=1, padding="VALID")
+        conv = tf.nn.conv1d(input=inputs, filters=w, stride=1, padding="VALID")
         # [num_words, num_chars - filter_size, num_filters]
         h = tf.nn.relu(tf.nn.bias_add(conv, b))
-        pooled = tf.reduce_max(h, 1)  # [num_words, num_filters]
+        pooled = tf.reduce_max(input_tensor=h, axis=1)  # [num_words, num_filters]
         outputs.append(pooled)
     # [num_words, num_filters * len(filter_sizes)]
     return tf.concat(outputs, 1)
@@ -284,24 +283,24 @@ class EmbeddingDictionary(object):
             return v
 
 
-class CustomLSTMCell(tf.nn.rnn_cell.RNNCell):
+class CustomLSTMCell(tf.compat.v1.nn.rnn_cell.RNNCell):
     def __init__(self, num_units, batch_size, dropout):
         self._num_units = num_units
         self._dropout = dropout
         self._dropout_mask = tf.nn.dropout(
-            tf.ones([batch_size, self.output_size]), dropout)
+            tf.ones([batch_size, self.output_size]), 1 - (dropout))
         self._initializer = self._block_orthonormal_initializer(
             [self.output_size] * 3)
-        initial_cell_state = tf.get_variable(
+        initial_cell_state = tf.compat.v1.get_variable(
             "lstm_initial_cell_state", [1, self.output_size])
-        initial_hidden_state = tf.get_variable(
+        initial_hidden_state = tf.compat.v1.get_variable(
             "lstm_initial_hidden_state", [1, self.output_size])
-        self._initial_state = tf.nn.rnn_cell.LSTMStateTuple(
+        self._initial_state = tf.compat.v1.nn.rnn_cell.LSTMStateTuple(
             initial_cell_state, initial_hidden_state)
 
     @property
     def state_size(self):
-        return tf.nn.rnn_cell.LSTMStateTuple(
+        return tf.compat.v1.nn.rnn_cell.LSTMStateTuple(
             self.output_size, self.output_size)
 
     @property
@@ -314,7 +313,7 @@ class CustomLSTMCell(tf.nn.rnn_cell.RNNCell):
 
     def __call__(self, inputs, state, scope=None):
         """Long short-term memory cell (LSTM)."""
-        with tf.variable_scope(scope or type(self).__name__):  # CustomLSTMCell
+        with tf.compat.v1.variable_scope(scope or type(self).__name__):  # CustomLSTMCell
             c, h = state
             h *= self._dropout_mask
             concat = projection(
@@ -324,7 +323,7 @@ class CustomLSTMCell(tf.nn.rnn_cell.RNNCell):
             i = tf.sigmoid(i)
             new_c = (1 - i) * c + i * tf.tanh(j)
             new_h = tf.tanh(new_c) * tf.sigmoid(o)
-            new_state = tf.nn.rnn_cell.LSTMStateTuple(new_c, new_h)
+            new_state = tf.compat.v1.nn.rnn_cell.LSTMStateTuple(new_c, new_h)
             return new_h, new_state
 
     def _orthonormal_initializer(self, scale=1.0):

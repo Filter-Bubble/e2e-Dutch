@@ -12,8 +12,7 @@ from e2edutch import util
 from e2edutch import coref_model as cm
 from e2edutch import naf
 
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 
 
 def get_parser():
@@ -74,7 +73,7 @@ def main(args=None):
     model = cm.CorefModel(config)
     sentences = {}
     predictions = {}
-    with tf.Session() as session:
+    with tf.compat.v1.Session() as session:
         model.restore(session)
         for example_num, example in enumerate(docs):
             # logging.info(example['doc_key'])

@@ -6,15 +6,13 @@ import json
 import threading
 import numpy as np
 import h5py
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 from . import bert
 from . import util
 from . import coref_ops
 from . import conll
 from . import metrics
-
-tf.disable_v2_behavior()
 
 
 class CorefModel(object):
@@ -66,29 +64,29 @@ class CorefModel(object):
         input_props.append((tf.int32, [None]))  # Gold ends.
         input_props.append((tf.int32, [None]))  # Cluster ids.
 
-        self.queue_input_tensors = [tf.placeholder(
+        self.queue_input_tensors = [tf.compat.v1.placeholder(
             dtype, shape) for dtype, shape in input_props]
         dtypes, shapes = zip(*input_props)
-        queue = tf.PaddingFIFOQueue(capacity=10, dtypes=dtypes, shapes=shapes)
+        queue = tf.queue.PaddingFIFOQueue(capacity=10, dtypes=dtypes, shapes=shapes)
         self.enqueue_op = queue.enqueue(self.queue_input_tensors)
         self.input_tensors = queue.dequeue()
 
         self.predictions, self.loss = self.get_predictions_and_loss(
             *self.input_tensors)
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
-        self.reset_global_step = tf.assign(self.global_step, 0)
-        learning_rate = tf.train.exponential_decay(self.config["learning_rate"],
+        self.reset_global_step = tf.compat.v1.assign(self.global_step, 0)
+        learning_rate = tf.compat.v1.train.exponential_decay(self.config["learning_rate"],
                                                    self.global_step,
                                                    self.config["decay_frequency"],
                                                    self.config["decay_rate"],
                                                    staircase=True)
-        trainable_params = tf.trainable_variables()
-        gradients = tf.gradients(self.loss, trainable_params)
+        trainable_params = tf.compat.v1.trainable_variables()
+        gradients = tf.gradients(ys=self.loss, xs=trainable_params)
         gradients, _ = tf.clip_by_global_norm(
             gradients, self.config["max_gradient_norm"])
         optimizers = {
-            "adam": tf.train.AdamOptimizer,
-            "sgd": tf.train.GradientDescentOptimizer
+            "adam": tf.compat.v1.train.AdamOptimizer,
+            "sgd": tf.compat.v1.train.GradientDescentOptimizer
         }
         optimizer = optimizers[self.config["optimizer"]](learning_rate)
         self.train_op = optimizer.apply_gradients(
@@ -115,12 +113,12 @@ class CorefModel(object):
     def restore(self, session):
         # Don't try to restore unused variables from the TF-Hub ELMo module.
         vars_to_restore = [
-            v for v in tf.global_variables() if "module/" not in v.name]
-        saver = tf.train.Saver(vars_to_restore)
+            v for v in tf.compat.v1.global_variables() if "module/" not in v.name]
+        saver = tf.compat.v1.train.Saver(vars_to_restore)
         checkpoint_path = os.path.join(
             self.config["log_dir"], "model.max.ckpt")
         logging.info("Restoring from {}".format(checkpoint_path))
-        session.run(tf.global_variables_initializer())
+        session.run(tf.compat.v1.global_variables_initializer())
         saver.restore(session, checkpoint_path)
 
     def load_lm_embeddings(self, doc_key, sentences):
@@ -265,12 +263,12 @@ class CorefModel(object):
         # [num_labeled, num_candidates]
         same_span = tf.logical_and(same_start, same_end)
         candidate_labels = tf.matmul(tf.expand_dims(
-            labels, 0), tf.to_int32(same_span))  # [1, num_candidates]
+            labels, 0), tf.cast(same_span, dtype=tf.int32))  # [1, num_candidates]
         candidate_labels = tf.squeeze(candidate_labels, 0)  # [num_candidates]
         return candidate_labels
 
     def get_dropout(self, dropout_rate, is_training):
-        return 1 - (tf.to_float(is_training) * dropout_rate)
+        return 1 - (tf.cast(is_training, dtype=tf.float32) * dropout_rate)
 
     def coarse_to_fine_pruning(self, top_span_emb, top_span_mention_scores, c):
         k = util.shape(top_span_emb, 0)
@@ -282,7 +280,7 @@ class CorefModel(object):
         fast_antecedent_scores = (tf.expand_dims(top_span_mention_scores, 1)
                                   + tf.expand_dims(top_span_mention_scores, 0))
         # [k, k]
-        fast_antecedent_scores += tf.log(tf.to_float(antecedents_mask))
+        fast_antecedent_scores += tf.math.log(tf.cast(antecedents_mask, dtype=tf.float32))
         # [k, k]
         fast_antecedent_scores += self.get_fast_antecedent_scores(top_span_emb)
 
@@ -311,7 +309,7 @@ class CorefModel(object):
             top_span_mention_scores, 1) + tf.gather(top_span_mention_scores,
                                                     top_antecedents)
         # [k, c]
-        top_fast_antecedent_scores += tf.log(tf.to_float(top_antecedents_mask))
+        top_fast_antecedent_scores += tf.math.log(tf.cast(top_antecedents_mask, dtype=tf.float32))
         return (top_antecedents, top_antecedents_mask,
                 top_fast_antecedent_scores, top_antecedent_offsets)
 
@@ -326,15 +324,15 @@ class CorefModel(object):
         self.lstm_dropout = self.get_dropout(
             self.config["lstm_dropout_rate"], is_training)
 
-        num_sentences = tf.shape(context_word_emb)[0]
-        max_sentence_length = tf.shape(context_word_emb)[1]
+        num_sentences = tf.shape(input=context_word_emb)[0]
+        max_sentence_length = tf.shape(input=context_word_emb)[1]
 
         context_emb_list = [context_word_emb]
         head_emb_list = [head_word_emb]
 
         if self.config["char_embedding_size"] > 0:
             # [num_sentences, max_sentence_length, max_word_length, emb]
-            char_emb = tf.gather(tf.get_variable("char_embeddings", [len(
+            char_emb = tf.gather(tf.compat.v1.get_variable("char_embeddings", [len(
                 self.char_dict), self.config["char_embedding_size"]]),
                 char_index)
 
@@ -362,13 +360,13 @@ class CorefModel(object):
 
         lm_emb_size = util.shape(lm_emb, 2)
         lm_num_layers = util.shape(lm_emb, 3)
-        with tf.variable_scope("lm_aggregation"):
-            self.lm_weights = tf.nn.softmax(tf.get_variable(
+        with tf.compat.v1.variable_scope("lm_aggregation"):
+            self.lm_weights = tf.nn.softmax(tf.compat.v1.get_variable(
                 "lm_scores", [lm_num_layers],
-                initializer=tf.constant_initializer(0.0)))
-            self.lm_scaling = tf.get_variable(
+                initializer=tf.compat.v1.constant_initializer(0.0)))
+            self.lm_scaling = tf.compat.v1.get_variable(
                 "lm_scaling", [],
-                initializer=tf.constant_initializer(1.0))
+                initializer=tf.compat.v1.constant_initializer(1.0))
         flattened_lm_emb = tf.reshape(
             lm_emb, [num_sentences
                      * max_sentence_length
@@ -390,9 +388,9 @@ class CorefModel(object):
         # [num_sentences, max_sentence_length, emb]
         head_emb = tf.concat(head_emb_list, 2)
         # [num_sentences, max_sentence_length, emb]
-        context_emb = tf.nn.dropout(context_emb, self.lexical_dropout)
+        context_emb = tf.nn.dropout(context_emb, 1 - (1 - (1 - (self.lexical_dropout))))
         # [num_sentences, max_sentence_length, emb]
-        head_emb = tf.nn.dropout(head_emb, self.lexical_dropout)
+        head_emb = tf.nn.dropout(head_emb, 1 - (1 - (1 - (self.lexical_dropout))))
 
         # [num_sentence, max_sentence_length]
         text_len_mask = tf.sequence_mask(text_len, maxlen=max_sentence_length)
@@ -401,7 +399,7 @@ class CorefModel(object):
             context_emb, text_len, text_len_mask)  # [num_words, emb]
         num_words = util.shape(context_outputs, 0)
 
-        genre_emb = tf.gather(tf.get_variable("genre_embeddings", [len(
+        genre_emb = tf.gather(tf.compat.v1.get_variable("genre_embeddings", [len(
             self.genres), self.config["feature_size"]]), genre)  # [emb]
 
         # [num_sentences, max_sentence_length]
@@ -430,14 +428,14 @@ class CorefModel(object):
         flattened_candidate_mask = tf.reshape(
             candidate_mask, [-1])  # [num_words * max_span_width]
         # [num_candidates]
-        candidate_starts = tf.boolean_mask(tf.reshape(
-            candidate_starts, [-1]), flattened_candidate_mask)
+        candidate_starts = tf.boolean_mask(tensor=tf.reshape(
+            candidate_starts, [-1]), mask=flattened_candidate_mask)
         # [num_candidates]
-        candidate_ends = tf.boolean_mask(tf.reshape(
-            candidate_ends, [-1]), flattened_candidate_mask)
+        candidate_ends = tf.boolean_mask(tensor=tf.reshape(
+            candidate_ends, [-1]), mask=flattened_candidate_mask)
         # [num_candidates]
-        candidate_sentence_indices = tf.boolean_mask(tf.reshape(
-            candidate_start_sentence_indices, [-1]), flattened_candidate_mask)
+        candidate_sentence_indices = tf.boolean_mask(tensor=tf.reshape(
+            candidate_start_sentence_indices, [-1]), mask=flattened_candidate_mask)
         # [num_candidates]
         candidate_cluster_ids = self.get_candidate_labels(candidate_starts,
                                                           candidate_ends,
@@ -461,13 +459,13 @@ class CorefModel(object):
             same_span = tf.equal(tf.expand_dims(
                 gold_spans, 1), tf.expand_dims(candidates_spans, 0))
             top_span_indices = tf.reduce_any(
-                tf.reduce_all(same_span, axis=2), axis=0)
-            top_span_indices = tf.squeeze(tf.where(top_span_indices), axis=1)
+                input_tensor=tf.reduce_all(input_tensor=same_span, axis=2), axis=0)
+            top_span_indices = tf.squeeze(tf.compat.v1.where(top_span_indices), axis=1)
             k = tf.cast(util.shape(top_span_indices, 0), tf.int32)
 
         else:
-            k = tf.to_int32(tf.floor(tf.to_float(
-                tf.shape(context_outputs)[0]) * self.config["top_span_ratio"]))
+            k = tf.cast(tf.floor(tf.cast(
+                tf.shape(input=context_outputs)[0], dtype=tf.float32) * self.config["top_span_ratio"]), dtype=tf.int32)
             top_span_indices = coref_ops.extract_spans(
                 tf.expand_dims(candidate_mention_scores, 0),
                 tf.expand_dims(candidate_starts, 0),
@@ -508,7 +506,7 @@ class CorefModel(object):
             top_span_mention_scores * -1, 1)  # tf.zeros([k, 1])  # [k, 1]
         dummy_scores_first = tf.zeros([k, 1])  # [k, 1]
         for i in range(self.config["coref_depth"]):
-            with tf.variable_scope("coref_layer", reuse=(i > 0)):
+            with tf.compat.v1.variable_scope("coref_layer", reuse=(i > 0)):
                 top_antecedent_emb = tf.gather(
                     top_span_emb, top_antecedents)  # [k, c, emb]
                 top_antecedent_scores = (top_fast_antecedent_scores
@@ -527,9 +525,9 @@ class CorefModel(object):
                      tf.expand_dims(top_span_emb, 1),
                      top_antecedent_emb], 1)  # [k, c + 1, emb]
                 # [k, emb]
-                attended_span_emb = tf.reduce_sum(tf.expand_dims(
-                    top_antecedent_weights, 2) * top_antecedent_emb, 1)
-                with tf.variable_scope("f"):
+                attended_span_emb = tf.reduce_sum(input_tensor=tf.expand_dims(
+                    top_antecedent_weights, 2) * top_antecedent_emb, axis=1)
+                with tf.compat.v1.variable_scope("f"):
                     f = tf.sigmoid(util.projection(
                         tf.concat([top_span_emb, attended_span_emb], 1),
                         util.shape(top_span_emb, -1)))  # [k, emb]
@@ -544,8 +542,8 @@ class CorefModel(object):
         top_antecedent_cluster_ids = tf.gather(
             top_span_cluster_ids, top_antecedents)  # [k, c]
         # [k, c]
-        top_antecedent_cluster_ids += tf.to_int32(
-            tf.log(tf.to_float(top_antecedents_mask)))
+        top_antecedent_cluster_ids += tf.cast(
+            tf.math.log(tf.cast(top_antecedents_mask, dtype=tf.float32)), dtype=tf.int32)
         same_cluster_indicator = tf.equal(
             top_antecedent_cluster_ids,
             tf.expand_dims(top_span_cluster_ids, 1))  # [k, c]
@@ -556,14 +554,14 @@ class CorefModel(object):
         dummy_labels_nomention = tf.expand_dims(
             tf.equal(top_span_cluster_ids, 0), 1)  # [k, 1]
         dummy_labels_first = tf.logical_not(tf.reduce_any(
-            tf.concat(
-                [dummy_labels_nomention, pairwise_labels], 1), 1,
+            input_tensor=tf.concat(
+                [dummy_labels_nomention, pairwise_labels], 1), axis=1,
             keepdims=True))  # [k, 1]
         top_antecedent_labels = tf.concat(
             [dummy_labels_nomention, dummy_labels_first, pairwise_labels], 1)  # [k, c + 1]
         loss = self.softmax_loss(
             top_antecedent_scores, top_antecedent_labels)  # [k]
-        loss = tf.reduce_sum(loss)  # []
+        loss = tf.reduce_sum(input_tensor=loss)  # []
 
         return [candidate_starts, candidate_ends, candidate_mention_scores,
                 top_span_starts, top_span_ends, top_antecedents,
@@ -583,11 +581,11 @@ class CorefModel(object):
 
         if self.config["use_features"]:
             span_width_index = span_width - 1  # [k]
-            span_width_emb = tf.gather(tf.get_variable("span_width_embeddings", [
+            span_width_emb = tf.gather(tf.compat.v1.get_variable("span_width_embeddings", [
                                        self.config["max_span_width"],
                                        self.config["feature_size"]]),
                                        span_width_index)  # [k, emb]
-            span_width_emb = tf.nn.dropout(span_width_emb, self.dropout)
+            span_width_emb = tf.nn.dropout(span_width_emb, 1 - (1 - (1 - (self.dropout))))
             span_emb_list.append(span_width_emb)
 
         if self.config["model_heads"]:
@@ -599,7 +597,7 @@ class CorefModel(object):
                 context_outputs, 0) - 1, span_indices)  # [k, max_span_width]
             # [k, max_span_width, emb]
             span_text_emb = tf.gather(head_emb, span_indices)
-            with tf.variable_scope("head_scores"):
+            with tf.compat.v1.variable_scope("head_scores"):
                 self.head_scores = util.projection(
                     context_outputs, 1)  # [num_words, 1]
             span_head_scores = tf.gather(
@@ -607,18 +605,18 @@ class CorefModel(object):
             span_mask = tf.expand_dims(tf.sequence_mask(
                 span_width, self.config["max_span_width"],
                 dtype=tf.float32), 2)  # [k, max_span_width, 1]
-            span_head_scores += tf.log(span_mask)  # [k, max_span_width, 1]
+            span_head_scores += tf.math.log(span_mask)  # [k, max_span_width, 1]
             span_attention = tf.nn.softmax(
                 span_head_scores, 1)  # [k, max_span_width, 1]
             span_head_emb = tf.reduce_sum(
-                span_attention * span_text_emb, 1)  # [k, emb]
+                input_tensor=span_attention * span_text_emb, axis=1)  # [k, emb]
             span_emb_list.append(span_head_emb)
 
         span_emb = tf.concat(span_emb_list, 1)  # [k, emb]
         return span_emb  # [k, emb]
 
     def get_mention_scores(self, span_emb):
-        with tf.variable_scope("mention_scores"):
+        with tf.compat.v1.variable_scope("mention_scores"):
             # [k, 1]
             return util.ffnn(
                 span_emb, self.config["ffnn_depth"], self.config["ffnn_size"],
@@ -626,9 +624,9 @@ class CorefModel(object):
 
     def softmax_loss(self, antecedent_scores, antecedent_labels):
         gold_scores = antecedent_scores + \
-            tf.log(tf.to_float(antecedent_labels))  # [k, max_ant + 1]
-        marginalized_gold_scores = tf.reduce_logsumexp(gold_scores, [1])  # [k]
-        log_norm = tf.reduce_logsumexp(antecedent_scores, [1])  # [k]
+            tf.math.log(tf.cast(antecedent_labels, dtype=tf.float32))  # [k, max_ant + 1]
+        marginalized_gold_scores = tf.reduce_logsumexp(input_tensor=gold_scores, axis=[1])  # [k]
+        log_norm = tf.reduce_logsumexp(input_tensor=antecedent_scores, axis=[1])  # [k]
         return log_norm - marginalized_gold_scores  # [k]
 
     def bucket_distance(self, distances):
@@ -637,9 +635,9 @@ class CorefModel(object):
         10 semi-logscale buckets:
         [0, 1, 2, 3, 4, 5-7, 8-15, 16-31, 32-63, 64+].
         """
-        logspace_idx = tf.to_int32(
-            tf.floor(tf.log(tf.to_float(distances)) / math.log(2))) + 3
-        use_identity = tf.to_int32(distances <= 4)
+        logspace_idx = tf.cast(
+            tf.floor(tf.math.log(tf.cast(distances, dtype=tf.float32)) / math.log(2)), dtype=tf.int32) + 3
+        use_identity = tf.cast(distances <= 4, dtype=tf.int32)
         combined_idx = use_identity * distances + \
             (1 - use_identity) * logspace_idx
         return tf.clip_by_value(combined_idx, 0, 9)
@@ -661,7 +659,7 @@ class CorefModel(object):
             antecedent_distance_buckets = self.bucket_distance(
                 top_antecedent_offsets)  # [k, c]
             # [k, c]
-            antecedent_distance_emb = tf.gather(tf.get_variable(
+            antecedent_distance_emb = tf.gather(tf.compat.v1.get_variable(
                                                 "antecedent_distance_emb",
                                                 [10,
                                                  self.config["feature_size"]]),
@@ -669,7 +667,7 @@ class CorefModel(object):
             feature_emb_list.append(antecedent_distance_emb)
 
         feature_emb = tf.concat(feature_emb_list, 2)  # [k, c, emb]
-        feature_emb = tf.nn.dropout(feature_emb, self.dropout)  # [k, c, emb]
+        feature_emb = tf.nn.dropout(feature_emb, 1 - (1 - (1 - (self.dropout))))  # [k, c, emb]
 
         target_emb = tf.expand_dims(top_span_emb, 1)  # [k, 1, emb]
         similarity_emb = top_antecedent_emb * target_emb  # [k, c, emb]
@@ -679,7 +677,7 @@ class CorefModel(object):
         pair_emb = tf.concat(
             [target_emb, top_antecedent_emb, similarity_emb, feature_emb], 2)
 
-        with tf.variable_scope("slow_antecedent_scores"):
+        with tf.compat.v1.variable_scope("slow_antecedent_scores"):
             slow_antecedent_scores = util.ffnn(
                 pair_emb, self.config["ffnn_depth"], self.config["ffnn_size"],
                 1, self.dropout)  # [k, c, 1]
@@ -688,19 +686,19 @@ class CorefModel(object):
         return slow_antecedent_scores  # [k, c]
 
     def get_fast_antecedent_scores(self, top_span_emb):
-        with tf.variable_scope("src_projection"):
+        with tf.compat.v1.variable_scope("src_projection"):
             # [k, emb]
             source_top_span_emb = tf.nn.dropout(util.projection(
-                top_span_emb, util.shape(top_span_emb, -1)), self.dropout)
+                top_span_emb, util.shape(top_span_emb, -1)), 1 - (1 - (1 - (self.dropout))))
         target_top_span_emb = tf.nn.dropout(
-            top_span_emb, self.dropout)  # [k, emb]
+            top_span_emb, 1 - (1 - (1 - (self.dropout))))  # [k, emb]
         # [k, k]
         return tf.matmul(source_top_span_emb,
                          target_top_span_emb, transpose_b=True)
 
     def flatten_emb_by_sentence(self, emb, text_len_mask):
-        num_sentences = tf.shape(emb)[0]
-        max_sentence_length = tf.shape(emb)[1]
+        num_sentences = tf.shape(input=emb)[0]
+        max_sentence_length = tf.shape(input=emb)[1]
 
         emb_rank = len(emb.get_shape())
         if emb_rank == 2:
@@ -711,38 +709,38 @@ class CorefModel(object):
                 emb, [num_sentences * max_sentence_length, util.shape(emb, 2)])
         else:
             raise ValueError("Unsupported rank: {}".format(emb_rank))
-        return tf.boolean_mask(flattened_emb, tf.reshape(
+        return tf.boolean_mask(tensor=flattened_emb, mask=tf.reshape(
             text_len_mask, [num_sentences * max_sentence_length]))
 
     def lstm_contextualize(self, text_emb, text_len, text_len_mask):
-        num_sentences = tf.shape(text_emb)[0]
+        num_sentences = tf.shape(input=text_emb)[0]
 
         current_inputs = text_emb  # [num_sentences, max_sentence_length, emb]
 
         for layer in range(self.config["contextualization_layers"]):
-            with tf.variable_scope("layer_{}".format(layer)):
-                with tf.variable_scope("fw_cell"):
+            with tf.compat.v1.variable_scope("layer_{}".format(layer)):
+                with tf.compat.v1.variable_scope("fw_cell"):
                     cell_fw = util.CustomLSTMCell(
                         self.config["contextualization_size"],
                         num_sentences,
                         self.lstm_dropout)
-                with tf.variable_scope("bw_cell"):
+                with tf.compat.v1.variable_scope("bw_cell"):
                     cell_bw = util.CustomLSTMCell(
                         self.config["contextualization_size"],
                         num_sentences,
                         self.lstm_dropout)
-                state_fw = tf.nn.rnn_cell.LSTMStateTuple(
+                state_fw = tf.compat.v1.nn.rnn_cell.LSTMStateTuple(
                     tf.tile(cell_fw.initial_state.c, [
                         num_sentences, 1]),
                     tf.tile(cell_fw.initial_state.h, [
                         num_sentences, 1]))
-                state_bw = tf.nn.rnn_cell.LSTMStateTuple(
+                state_bw = tf.compat.v1.nn.rnn_cell.LSTMStateTuple(
                     tf.tile(cell_bw.initial_state.c, [
                         num_sentences, 1]),
                     tf.tile(cell_bw.initial_state.h, [
                         num_sentences, 1]))
 
-                (fw_outputs, bw_outputs), _ = tf.nn.bidirectional_dynamic_rnn(
+                (fw_outputs, bw_outputs), _ = tf.compat.v1.nn.bidirectional_dynamic_rnn(
                     cell_fw=cell_fw,
                     cell_bw=cell_bw,
                     inputs=current_inputs,
@@ -752,7 +750,7 @@ class CorefModel(object):
 
                 # [num_sentences, max_sentence_length, emb]
                 text_outputs = tf.concat([fw_outputs, bw_outputs], 2)
-                text_outputs = tf.nn.dropout(text_outputs, self.lstm_dropout)
+                text_outputs = tf.nn.dropout(text_outputs, 1 - (1 - (1 - (self.lstm_dropout))))
                 if layer > 0:
                     # [num_sentences, max_sentence_length, emb]
                     highway_gates = tf.sigmoid(
