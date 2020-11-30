@@ -1,7 +1,7 @@
-import e2edutch.coref_model
-from collections import OrderedDict
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import e2edutch.coref_model_new
+import tensorflow as tf
+import numpy as np
+from collections import OrderedDict, defaultdict
 
 test_config = {'max_top_antecedents': 30,
                'max_training_sentences': 30,
@@ -49,21 +49,42 @@ test_config = {'max_top_antecedents': 30,
                }
 
 
-def test_tensorize_example():
-    example = {
-        'doc_key': 'test',
-        'sentences': [['Een', 'zin', '.']],
-        'clusters': []
-    }
-    with tf.Session() as session:
-        model = e2edutch.coref_model.CorefModel(test_config)
-        tensors = model.tensorize_example(example, False)
-        (tokens, context_word_emb, head_word_emb, lm_emb,
-         char_index, text_len, genre, is_training,
-         gold_starts, gold_ends, cluster_ids) = tensors
-    assert tokens.shape == (1, 3)
-    assert context_word_emb.shape == (1, 3, 10)
-    assert head_word_emb.shape == (1, 3, 10)
-    assert lm_emb.shape == (0, 0,
-                            test_config['lm_size'], test_config['lm_layers'])
-    assert len(gold_starts) == 0
+def test_CNN():
+    input = tf.zeros((12, 9, 8))
+
+    cnn_layer = e2edutch.coref_model_new.CNN(tf.shape(input),
+                                             test_config['filter_widths'],
+                                             test_config['filter_size'])
+    output = cnn_layer(input)
+    output_shape = tf.shape(output)
+    assert tuple(output_shape.numpy()) == (12, 150)
+
+
+def test_reduce_max():
+    x = tf.zeros((4, 2, 4))
+    y = e2edutch.coref_model_new.ReduceMax(axis=1)(x)
+    assert tuple(tf.shape(y).numpy()) == (4, 4)
+
+
+def test_aggregate_embeddings():
+    num_sentences = 2
+    max_sentence_length = 6
+    emb_size = 10
+    max_word_length = 9
+    lm_emb_size = test_config['lm_size']
+    char_emb_size = test_config['filter_size'] * len(test_config['filter_widths'])
+    char_dict = defaultdict(int)
+    char_dict[u"<unk>"] = 0
+    ds = tf.data.Dataset.from_tensors({'head_word_emb': np.zeros((num_sentences, max_sentence_length, emb_size)),
+                                       'context_word_emb': np.zeros((num_sentences, max_sentence_length, emb_size)),
+                                       'lm_emb': np.zeros((num_sentences, max_sentence_length, lm_emb_size, 1)),
+                                       'char_index': np.zeros((num_sentences, max_sentence_length, max_word_length), dtype='int32')})
+    input = list(ds)[0]
+    agg_layer = e2edutch.coref_model_new.Aggregate_embedding(char_dict, test_config)
+    context_emb, head_emb = agg_layer(input)
+    context_emb_shape = tuple(tf.shape(context_emb).numpy())
+    head_emb_shape = tuple(tf.shape(head_emb).numpy())
+    # [num_sentences, max_sentence_length, emb]
+    assert context_emb_shape == (num_sentences, max_sentence_length,
+                                 emb_size+lm_emb_size+char_emb_size)
+    assert head_emb_shape == (num_sentences, max_sentence_length, emb_size+char_emb_size)

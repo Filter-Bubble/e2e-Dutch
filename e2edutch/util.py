@@ -130,7 +130,7 @@ def highway(inputs, num_layers, dropout):
 
 
 def shape(x, dim):
-    return x.get_shape()[dim].value or tf.shape(input=x)[dim]
+    return x.shape[dim]
 
 
 def ffnn(inputs, num_hidden_layers, hidden_size, output_size,
@@ -149,8 +149,8 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size,
 
     for i in range(num_hidden_layers):
         hidden_weights = tf.compat.v1.get_variable("hidden_weights_{}".format(i),
-                                         [shape(current_inputs, 1),
-                                          hidden_size])
+                                                   [shape(current_inputs, 1),
+                                                    hidden_size])
         hidden_bias = tf.compat.v1.get_variable(
             "hidden_bias_{}".format(i), [hidden_size])
         current_outputs = tf.nn.relu(tf.compat.v1.nn.xw_plus_b(
@@ -169,25 +169,6 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size,
     if len(inputs.get_shape()) == 3:
         outputs = tf.reshape(outputs, [batch_size, seqlen, output_size])
     return outputs
-
-
-def cnn(inputs, filter_sizes, num_filters):
-    # num_words = shape(inputs, 0)
-    # num_chars = shape(inputs, 1)
-    input_size = shape(inputs, 2)
-    outputs = []
-    for i, filter_size in enumerate(filter_sizes):
-        with tf.compat.v1.variable_scope("conv_{}".format(i)):
-            w = tf.compat.v1.get_variable("w", [filter_size, input_size, num_filters])
-            b = tf.compat.v1.get_variable("b", [num_filters])
-        # [num_words, num_chars - filter_size, num_filters]
-        conv = tf.nn.conv1d(input=inputs, filters=w, stride=1, padding="VALID")
-        # [num_words, num_chars - filter_size, num_filters]
-        h = tf.nn.relu(tf.nn.bias_add(conv, b))
-        pooled = tf.reduce_max(input_tensor=h, axis=1)  # [num_words, num_filters]
-        outputs.append(pooled)
-    # [num_words, num_filters * len(filter_sizes)]
-    return tf.concat(outputs, 1)
 
 
 def batch_gather(emb, indices):
