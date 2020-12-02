@@ -66,6 +66,17 @@ def test_reduce_max():
     assert tuple(tf.shape(y).numpy()) == (4, 4)
 
 
+def test_LSTM():
+    # [num_sentences, max_sentence_length, emb]
+    inputs = tf.zeros((2, 6, 10))
+    text_len = tf.constant([5, 6])
+    lstm = e2edutch.coref_model_new.LSTMContextualize(test_config)
+    print('Shape: ', tf.shape(inputs))
+    output = lstm(inputs, text_len)
+    assert tf.shape(output)[0] == 11  # Total number of words
+    assert tf.shape(output)[1] == 2*test_config['contextualization_size']
+
+
 def test_aggregate_embeddings():
     num_sentences = 2
     max_sentence_length = 6

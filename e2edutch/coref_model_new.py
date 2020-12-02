@@ -48,7 +48,7 @@ class CNN(tf.keras.layers.Layer):
         return output
 
 
-class Aggregate_embedding(tf.keras.layers.Layer):
+class Aggregate_embedding(tf.keras.Model):
     def __init__(self, char_dict, config):
         super(Aggregate_embedding, self).__init__()
         self.config = config
@@ -132,11 +132,54 @@ class Aggregate_embedding(tf.keras.layers.Layer):
         return context_emb, head_emb
 
 
-class CorefModel(tf.keras.Model):
+class LSTMContextualize(tf.keras.layers.Layer):
     def __init__(self, config):
+        super(LSTMContextualize, self).__init__()
+        self.config = config
+        self.lstm_dropout = config['lstm_dropout_rate']
+        self.lstm = tf.keras.layers.Bidirectional(
+            tf.keras.layers.LSTM(units=self.config["contextualization_size"],
+                                 dropout=self.lstm_dropout,
+                                 return_sequences=True))
+        self.dropout = tf.keras.layers.Dropout(self.lstm_dropout)
+
+    def flatten_emb_by_sentence(self, emb, text_len_mask):
+        num_sentences = tf.shape(input=emb)[0]
+        max_sentence_length = tf.shape(input=emb)[1]
+        emb_rank = len(emb.get_shape())
+        if emb_rank == 2:
+            flattened_emb = tf.reshape(
+                emb, [num_sentences * max_sentence_length])
+        elif emb_rank == 3:
+            flattened_emb = tf.reshape(
+                emb, [num_sentences * max_sentence_length, util.shape(emb, 2)])
+        else:
+            raise ValueError("Unsupported rank: {}".format(emb_rank))
+        mask_reshaped = tf.reshape(
+            text_len_mask, [num_sentences * max_sentence_length])
+        return tf.boolean_mask(tensor=flattened_emb, mask=mask_reshaped)
+
+    def call(self, inputs, text_len):
+        max_sentence_length = tf.shape(inputs)[-2]
+        text_len_mask = tf.sequence_mask(text_len, maxlen=max_sentence_length)
+        # [num_sentences, max_sentence_length, emb]
+        text_outputs = self.lstm(inputs)
+        # [num_sentences, max_sentence_length, emb]
+        text_outputs = self.dropout(text_outputs)
+        return self.flatten_emb_by_sentence(text_outputs, text_len_mask)
+
+
+class CorefModel(tf.keras.Model):
+    def __init__(self, config, char_dict):
         super(CorefModel, self).__init__()
         self.config = config
+        self.char_dict = char_dict
+        self.aggregate_embedding_layer = Aggregate_embedding(self.char_dict, self.config)
+        self.dropout_layer = tf.keras.layers.Dropout(config['lexical_dropout_rate'])
 
     def call(self, inputs):
-        outputs = inputs
+        context_emb, head_emb = self.aggregate_embedding_layer(inputs)
+        context_emb = self.dropout_layer(context_emb, inputs['is_training'])
+        head_emb = self.dropout_layer(head_emb, inputs['is_training'])
+        outputs = (context_emb, head_emb)
         return outputs
