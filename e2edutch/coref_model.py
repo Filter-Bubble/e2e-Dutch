@@ -166,7 +166,7 @@ class CorefModel(object):
                 np.array([label_dict[c] for c in labels]))
 
     def tensorize_example(self, example, is_training):
-        clusters = example["clusters"]
+        clusters = example["clusters"] if "clusters" in example else []
 
         gold_mentions = sorted(tuple(m) for m in util.flatten(clusters))
         gold_mention_map = {m: i for i, m in enumerate(gold_mentions)}

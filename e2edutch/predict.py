@@ -12,8 +12,47 @@ from e2edutch import util
 from e2edutch import coref_model as cm
 from e2edutch import naf
 
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
+
+
+class Predictor(object):
+    def __init__(self, model_name='best', cfg_file=None):
+        self.config = util.initialize_from_env(model_name, cfg_file)
+        self.session = tf.compat.v1.Session()
+        self.model = cm.CorefModel(self.config)
+        self.model.restore(self.session)
+
+    def predict(self, example):
+        """
+        Predict coreference spans for a tokenized text.
+
+
+        Args:
+            example (dict): dict with the following fields:
+                              sentences ([[str]])
+                              doc_id (str)
+                              clusters ([[(int, int)]]) (optional)
+
+        Returns:
+            [[(int, int)]]: a list of clusters. The items of the cluster are
+                            spans, denoted by their start end end token index
+
+        """
+        tensorized_example = self.model.tensorize_example(
+            example, is_training=False)
+        feed_dict = {i: t for i, t in zip(
+            self.model.input_tensors, tensorized_example)}
+        _, _, _, top_span_starts, top_span_ends, top_antecedents, top_antecedent_scores = self.session.run(
+            self.model.predictions, feed_dict=feed_dict)
+        predicted_antecedents = self.model.get_predicted_antecedents(
+            top_antecedents, top_antecedent_scores)
+        predicted_clusters, _ = self.model.get_predicted_clusters(
+            top_span_starts, top_span_ends, predicted_antecedents)
+
+        return predicted_clusters
+
+    def end_session(self):
+        self.session.close()
 
 
 def get_parser():
@@ -44,7 +83,7 @@ def main(args=None):
     args = parser.parse_args()
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
-    config = util.initialize_from_env(args.config, args.cfg_file)
+    # config = util.initialize_from_env(args.config, args.cfg_file)
 
     # Input file in .jsonlines format or .conll.
     input_filename = args.input_filename
@@ -71,60 +110,49 @@ def main(args=None):
         docs = [util.create_example(text)]
 
     output_file = args.output_file
-    model = cm.CorefModel(config)
+    predictor = Predictor(args.config, args.cfg_file)
     sentences = {}
     predictions = {}
-    with tf.Session() as session:
-        model.restore(session)
-        for example_num, example in enumerate(docs):
-            # logging.info(example['doc_key'])
-            tensorized_example = model.tensorize_example(
-                example, is_training=False)
-            feed_dict = {i: t for i, t in zip(
-                model.input_tensors, tensorized_example)}
-            _, _, _, top_span_starts, top_span_ends, top_antecedents, top_antecedent_scores = session.run(
-                model.predictions, feed_dict=feed_dict)
-            predicted_antecedents = model.get_predicted_antecedents(
-                top_antecedents, top_antecedent_scores)
-            example["predicted_clusters"], _ = model.get_predicted_clusters(
-                top_span_starts, top_span_ends, predicted_antecedents)
-            if args.format_out == 'jsonlines':
-                output_file.write(json.dumps(example))
-                output_file.write("\n")
-            else:
-                predictions[example['doc_key']] = example["predicted_clusters"]
-                sentences[example['doc_key']] = example["sentences"]
-            if example_num % 100 == 0:
-                logging.info("Decoded {} examples.".format(example_num + 1))
-        if args.format_out == 'conll':
-            conll.output_conll(output_file, sentences, predictions)
-        elif args.format_out == 'naf':
-            # Check number of docs - what to do if multiple?
-            # Create naf obj if input format was not naf
-            if ext_input != '.naf':
-                # To do: add linguistic processing layers for terms and tokens
-                logging.warn(
-                    'Outputting NAF when input was not naf,'
-                    + 'no dependency information available')
-                for doc_key in sentences:
-                    naf_obj, term_ids = naf.get_naf_from_sentences(
-                        sentences[doc_key])
-                    naf_obj = naf.create_coref_layer(
-                        naf_obj, predictions[doc_key], term_ids)
-                    naf_obj = naf.add_linguistic_processors(naf_obj)
-                    buffer = io.BytesIO()
-                    naf_obj.dump(buffer)
-                    output_file.write(buffer.getvalue().decode('utf-8'))
-                    # To do, make sepearate outputs?
-                    # TO do, use dependency information from conll?
-            else:
-                # We only have one input doc
+    for example_num, example in enumerate(docs):
+        # logging.info(example['doc_key'])
+        example["predicted_clusters"], _ = predictor.predict(example)
+        if args.format_out == 'jsonlines':
+            output_file.write(json.dumps(example))
+            output_file.write("\n")
+        else:
+            predictions[example['doc_key']] = example["predicted_clusters"]
+            sentences[example['doc_key']] = example["sentences"]
+        if example_num % 100 == 0:
+            logging.info("Decoded {} examples.".format(example_num + 1))
+    if args.format_out == 'conll':
+        conll.output_conll(output_file, sentences, predictions)
+    elif args.format_out == 'naf':
+        # Check number of docs - what to do if multiple?
+        # Create naf obj if input format was not naf
+        if ext_input != '.naf':
+            # To do: add linguistic processing layers for terms and tokens
+            logging.warn(
+                'Outputting NAF when input was not naf,'
+                + 'no dependency information available')
+            for doc_key in sentences:
+                naf_obj, term_ids = naf.get_naf_from_sentences(
+                    sentences[doc_key])
                 naf_obj = naf.create_coref_layer(
-                    naf_obj, example["predicted_clusters"], term_ids)
+                    naf_obj, predictions[doc_key], term_ids)
                 naf_obj = naf.add_linguistic_processors(naf_obj)
                 buffer = io.BytesIO()
                 naf_obj.dump(buffer)
                 output_file.write(buffer.getvalue().decode('utf-8'))
+                # To do, make sepearate outputs?
+                # TO do, use dependency information from conll?
+        else:
+            # We only have one input doc
+            naf_obj = naf.create_coref_layer(
+                naf_obj, example["predicted_clusters"], term_ids)
+            naf_obj = naf.add_linguistic_processors(naf_obj)
+            buffer = io.BytesIO()
+            naf_obj.dump(buffer)
+            output_file.write(buffer.getvalue().decode('utf-8'))
 
 
 if __name__ == "__main__":
