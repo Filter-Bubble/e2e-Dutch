@@ -19,6 +19,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
     def run(self):
         args = ["g++", "-std=c++11", "-shared", "-fPIC", "-O2"]
+        args += ["-Wl,-rpath=" + tf.sysconfig.get_lib()]
         args += tf.sysconfig.get_compile_flags() + tf.sysconfig.get_link_flags()
         args += [
                 pkg_resources.resource_filename("e2edutch", "coref_kernels.cc"),
