@@ -1,5 +1,9 @@
 import setuptools
+import setuptools.command.build_py
 import os
+import tensorflow as tf
+import subprocess
+import pkg_resources
 
 __version__ = None
 
@@ -8,6 +12,22 @@ with open("README.md", "r") as fh:
 
 with open(os.path.join(os.path.dirname(__file__), 'e2edutch/__version__.py')) as versionpy:
     exec(versionpy.read())
+
+
+class BuildPyCommand(setuptools.command.build_py.build_py):
+    """Build the tensorflow kernels, and proceed with default build."""
+
+    def run(self):
+        args = ["g++", "-std=c++11", "-shared", "-fPIC", "-O2"]
+        args += tf.sysconfig.get_compile_flags() + tf.sysconfig.get_link_flags()
+        args += [
+                pkg_resources.resource_filename("e2edutch", "coref_kernels.cc"),
+                "-o",
+                pkg_resources.resource_filename("e2edutch", "coref_kernels.so")
+                ]
+        subprocess.check_call(args)
+        setuptools.command.build_py.build_py.run(self)
+
 
 setuptools.setup(
     name="e2e-Dutch",
@@ -27,9 +47,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     include_package_data=True,
-    package_data={  # ('cfg', ['cfg/*']),
-        'e2edutch': ['lib/coref_kernels.so',
-                     'cfg/*.conf']},
+    package_data={'e2edutch': ['cfg/*.conf']},
+    cmdclass={
+        "build_py": BuildPyCommand
+    },
     test_suite='test',
     python_requires='>=3.6',
     install_requires=[
