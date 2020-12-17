@@ -47,7 +47,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     include_package_data=True,
-    package_data={'e2edutch': ['cfg/*.conf']},
+    package_data={'e2edutch': ["cfg/*.conf", "coref_kernels.so"]},
     cmdclass={
         "build_py": BuildPyCommand
     },
