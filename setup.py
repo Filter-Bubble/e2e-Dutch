@@ -18,7 +18,8 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
     """Build the tensorflow kernels, and proceed with default build."""
 
     def run(self):
-        args = ["g++", "-std=c++11", "-shared", "-fPIC", "-O2"]
+        args = ["g++", "-std=c++11", "-shared", "-fPIC", "-O2",
+                "-D_GLIBCXX_USE_CXX11_ABI=0"]
         args += ["-Wl,-rpath=" + tf.sysconfig.get_lib()]
         args += tf.sysconfig.get_compile_flags() + tf.sysconfig.get_link_flags()
         args += [
