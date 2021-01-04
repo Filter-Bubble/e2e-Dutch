@@ -65,7 +65,7 @@ setuptools.setup(
         "scipy",
         "scikit-learn",
         "torch",
-        "transformers"
+        "transformers<=3.5.1"
     ],
     tests_require=[
         'pytest',

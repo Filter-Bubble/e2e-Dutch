@@ -4,6 +4,6 @@ scikit-learn
 tensorflow>=2.0.0
 nltk
 pyhocon
-transformers
+transformers<=3.5.1
 tensorflow_hub
 KafNafParserPy
