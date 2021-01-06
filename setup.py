@@ -20,15 +20,14 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
     def run(self):
         args = ["g++", "-std=c++11", "-shared"]
         args += [
-                pkg_resources.resource_filename("e2edutch", "coref_kernels.cc"),
-                "-o",
-                pkg_resources.resource_filename("e2edutch", "coref_kernels.so")
-                ]
+            pkg_resources.resource_filename("e2edutch", "coref_kernels.cc"),
+            "-o",
+            pkg_resources.resource_filename("e2edutch", "coref_kernels.so")
+        ]
         args += ["-fPIC"]
         args += tf.sysconfig.get_compile_flags() + tf.sysconfig.get_link_flags()
         args += ["-O2",
-                "-D_GLIBCXX_USE_CXX11_ABI=0"]
-        args += ["-Wl,-rpath=" + tf.sysconfig.get_lib()]
+                 "-D_GLIBCXX_USE_CXX11_ABI=0"]
         subprocess.check_call(args)
         setuptools.command.build_py.build_py.run(self)
 
