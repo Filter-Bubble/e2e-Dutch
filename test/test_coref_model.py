@@ -1,3 +1,6 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import e2edutch.coref_model
 from collections import OrderedDict
 import tensorflow.compat.v1 as tf

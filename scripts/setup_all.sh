@@ -23,11 +23,3 @@ if [ ! -f data/best/model.max.ckpt.index ]; then
   wget https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download -O model.zip
   unzip model.zip
 fi
-
-# Build custom kernels.
-TF_CFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_compile_flags()))') )
-TF_LFLAGS=( $(python -c 'import tensorflow as tf; print(" ".join(tf.sysconfig.get_link_flags()))') )
-
-# Linux
-mkdir -p e2edutch/lib
-g++ -std=c++11 -shared e2edutch/coref_kernels.cc -o e2edutch/lib/coref_kernels.so -fPIC ${TF_CFLAGS[@]} ${TF_LFLAGS[@]} -O2 -D_GLIBCXX_USE_CXX11_ABI=0
