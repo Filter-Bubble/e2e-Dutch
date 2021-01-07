@@ -7,7 +7,7 @@ def test_predict():
         'doc_key': 'test',
         'sentences': [['Een', 'zin', '.']]
     }
-    predictor = e2edutch.predict.Predictor(model_name='best')
+    predictor = e2edutch.predict.Predictor(model_name='final')
     clusters = predictor.predict(example)
     predictor.end_session()
     assert(len(clusters) >= 0)

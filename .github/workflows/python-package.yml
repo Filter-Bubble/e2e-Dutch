@@ -32,8 +32,10 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Install package
       run: |
-        ./scripts/setup_all.sh
         python setup.py install
+    - name: Download models
+      run: |
+        python -m e2edutch.download
     - name: Test with pytest
       run: |
         pytest --cov=./e2edutch --cov-report=xml
