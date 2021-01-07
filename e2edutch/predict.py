@@ -12,7 +12,7 @@ from e2edutch import util
 from e2edutch import coref_model as cm
 from e2edutch import naf
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 class Predictor(object):
@@ -53,6 +53,7 @@ class Predictor(object):
 
     def end_session(self):
         self.session.close()
+        tf.reset_default_graph()
 
 
 def get_parser():

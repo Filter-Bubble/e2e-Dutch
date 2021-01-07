@@ -1,5 +1,6 @@
 import e2edutch.predict
 from collections import OrderedDict
+import tensorflow.compat.v1 as tf
 
 
 def test_predict():
