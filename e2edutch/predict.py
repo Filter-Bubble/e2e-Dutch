@@ -16,7 +16,7 @@ import tensorflow.compat.v1 as tf
 
 
 class Predictor(object):
-    def __init__(self, model_name='best', cfg_file=None):
+    def __init__(self, model_name='final', cfg_file=None):
         self.config = util.initialize_from_env(model_name, cfg_file)
         self.session = tf.compat.v1.Session()
         self.model = cm.CorefModel(self.config)
