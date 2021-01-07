@@ -136,3 +136,4 @@ data/*.hdf5
 data/*.vec
 data/*.vec.filtered
 conll-2012
+data/*

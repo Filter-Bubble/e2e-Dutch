@@ -23,14 +23,23 @@ pip install .
 The `setup_all` script downloads the word vector files to the `data` directories. It also builds the application-specific tensorflow kernels.
 
 ## Quick start
-A pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the nltk package will be used for tokenization).
+A pretrained model is available to download:
+```
+python -m e2edutch.download
+```
+This downloads the model files, the default location is the `data` directory inside the python package location.
+It can also be set manually by specifying the enviornment vairable `E2E_HOME` or through the config file (see below).
+
+
+
+The pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the nltk package will be used for tokenization).
 ```
 python -m e2edutch.predict [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}]
                   [-c WORD_COL] [--cfg_file CFG_FILE] [-v]
                   config input_filename
 
 positional arguments:
-  config: name of the model to use for prediction
+  config: name of the model to use for prediction ('final' for the pretrained)
   input_filename
 
 optional arguments:

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pyhocon
 import errno
 import codecs
@@ -18,16 +19,7 @@ def get_data_dir(config):
     elif os.environ.get('E2E_HOME', None) is not None:
         return os.environ['E2E_HOME']
     else:
-        return 'data'
-
-
-def get_log_dir(config):
-    if config.get('log_root', None) is not None:
-        return config['log_root']
-    elif os.environ.get('E2E_HOME', None) is not None:
-        return os.path.join(os.environ['E2E_HOME'], 'logs')
-    else:
-        return 'logs'
+        return Path(__file__).parent.parent / "data"
 
 
 def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
@@ -48,7 +40,7 @@ def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
     config_model = pyhocon.ConfigFactory.parse_file(model_cfg_file)[model_name]
     config = pyhocon.ConfigTree.merge_configs(config_model, config_base)
     config['datapath'] = get_data_dir(config)
-    config['log_root'] = get_log_dir(config)
+    config['log_root'] = config['datapath']
 
     config["log_dir"] = mkdirs(os.path.join(config["log_root"], model_name))
 
@@ -162,7 +154,7 @@ def ffnn(inputs, num_hidden_layers, hidden_size, output_size,
         current_inputs = current_outputs
 
     output_weights = tf.get_variable("output_weights", [shape(
-           current_inputs, 1), output_size],
+        current_inputs, 1), output_size],
         initializer=output_weights_initializer)
     output_bias = tf.get_variable("output_bias", [output_size])
     outputs = tf.nn.xw_plus_b(current_inputs, output_weights, output_bias)

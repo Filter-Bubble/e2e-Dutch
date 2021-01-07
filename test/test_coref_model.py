@@ -1,9 +1,9 @@
+import tensorflow.compat.v1 as tf
+from collections import OrderedDict
+import e2edutch.coref_model
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-import e2edutch.coref_model
-from collections import OrderedDict
-import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
 test_config = {'max_top_antecedents': 30,
@@ -64,6 +64,7 @@ def test_tensorize_example():
         (tokens, context_word_emb, head_word_emb, lm_emb,
          char_index, text_len, genre, is_training,
          gold_starts, gold_ends, cluster_ids) = tensors
+    tf.reset_default_graph()
     assert tokens.shape == (1, 3)
     assert context_word_emb.shape == (1, 3, 10)
     assert head_word_emb.shape == (1, 3, 10)
