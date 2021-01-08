@@ -1,7 +1,6 @@
 import setuptools
 import setuptools.command.build_py
 import os
-import tensorflow as tf
 import subprocess
 import pkg_resources
 
@@ -18,6 +17,11 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
     """Build the tensorflow kernels, and proceed with default build."""
 
     def run(self):
+        try:
+            import tensorflow as tf
+        except ImportError:
+            raise ImportError("This module requires tensorflow to be installed. " +
+                              "Install it first with `pip install tensorflow`")
         args = ["g++", "-std=c++11", "-shared"]
         args += [
             pkg_resources.resource_filename("e2edutch", "coref_kernels.cc"),
