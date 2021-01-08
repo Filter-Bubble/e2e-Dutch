@@ -15,11 +15,12 @@ tf.disable_v2_behavior()
 
 def get_data_dir(config):
     if config.get('datapath', None) is not None:
-        return config['datapath']
+        path = config['datapath']
     elif os.environ.get('E2E_HOME', None) is not None:
-        return os.environ['E2E_HOME']
+        path = os.environ['E2E_HOME']
     else:
-        return Path(__file__).parent.parent / "data"
+        path = Path(__file__).parent / "data"
+    return path
 
 
 def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):

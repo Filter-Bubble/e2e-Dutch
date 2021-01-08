@@ -3,6 +3,7 @@ import requests
 import gzip
 import zipfile
 from tqdm import tqdm
+from pathlib import Path
 from e2edutch import util
 
 
@@ -27,13 +28,15 @@ def download_file(url, path):
 
 
 def download_data(config={}):
-    data_dir = util.get_data_dir(config)
+    data_dir = Path(util.get_data_dir(config))
+    # Create the data directory if it doesn't exist yet
+    data_dir.mkdir(parents=True, exist_ok=True)
 
     # Download word vectors
     url = "https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.nl.300.vec.gz"
-    fname = os.path.join(data_dir, 'fasttext.300.vec')
-    fname_gz = fname+'.gz'
-    if not os.path.exists(fname):
+    fname = data_dir / 'fasttext.300.vec'
+    fname_gz = data_dir / 'fasttext.300.vec.gz'
+    if not fname.exists():
         download_file(url, fname_gz)
         with gzip.open(fname_gz, 'rb') as fin:
             with open(fname, 'wb') as fout:
@@ -41,24 +44,25 @@ def download_data(config={}):
                 for i, line in enumerate(fin.readlines()):
                     if i > 0:
                         fout.write(line)
-        os.remove(fname_gz)
+        # Remove gz file
+        fname_gz.unlink()
 
     # Download e2e dutch model_
     url = "https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download"
-    fname_zip = os.path.join(data_dir, 'model.zip')
-    log_dir_name = os.path.join(data_dir, 'final')
-    if not os.path.exists(fname_zip) and not os.path.exists(log_dir_name):
+    fname_zip = data_dir / 'model.zip'
+    log_dir_name = data_dir / 'final'
+    if not fname_zip.exists() and not log_dir_name.exists():
         download_file(url, fname_zip)
-    if not os.path.exists(log_dir_name):
+    if not log_dir_name.exists():
         with zipfile.ZipFile(fname_zip, 'r') as zfile:
             zfile.extractall(data_dir)
-        os.rename(os.path.join(data_dir, 'logs', 'final'), log_dir_name)
-        os.rmdir(os.path.join(data_dir, 'logs'))
+        Path(data_dir / 'logs' / 'final').rename(log_dir_name)
+        Path(data_dir, 'logs').unlink()
 
     # Download char_dict
     url = "https://github.com/Filter-Bubble/e2e-Dutch/raw/v0.2.0/data/char_vocab.dutch.txt"
-    fname = os.path.join(data_dir, 'char_vocab.dutch.txt')
-    if not os.path.exists(fname):
+    fname = data_dir / 'char_vocab.dutch.txt'
+    if not fname.exists():
         download_file(url, fname)
 
 
