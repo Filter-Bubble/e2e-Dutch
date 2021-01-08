@@ -137,3 +137,4 @@ data/*.vec
 data/*.vec.filtered
 conll-2012
 data/*
+e2edutch/data/*

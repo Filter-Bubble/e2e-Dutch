@@ -51,10 +51,44 @@ def get_prediction_map(predictions):
     return prediction_map
 
 
+def clusters_to_brackets(sentences, predictions):
+    prediction_map = get_prediction_map({'': predictions})
+    start_map, end_map, word_map = prediction_map['']
+    word_index = 0
+    brackets_list = []
+    for sent in sentences:
+        sent_brackets_list = []
+        for i, word in enumerate(sent):
+            coref_list = []
+            if word_index in end_map:
+                for cluster_id in end_map[word_index]:
+                    coref_list.append("{})".format(cluster_id))
+            if word_index in word_map:
+                for cluster_id in word_map[word_index]:
+                    coref_list.append("({})".format(cluster_id))
+            if word_index in start_map:
+                for cluster_id in start_map[word_index]:
+                    coref_list.append("({}".format(cluster_id))
+            coref = '-' if len(coref_list) == 0 else "|".join(coref_list)
+            sent_brackets_list.append(coref)
+            word_index += 1
+        brackets_list.append(sent_brackets_list)
+    return brackets_list
+
+
 def output_conll(output_file, sentences, predictions):
-    prediction_map = get_prediction_map(predictions)
-    for doc_key in prediction_map:
-        start_map, end_map, word_map = prediction_map[doc_key]
+    """
+    Output the tokens and coreferences in CONLL-2012 format
+
+    Args:
+        output_file (File or IOBase): File to write the CONLL to
+        sentences (dict): keys are the doc_keys, values are the sentences of
+                          that doc
+        predictions (dict): keys are the doc_keys, values are the predicted
+                            clusters of that doc
+    """
+    for doc_key in sentences:
+        brackets = clusters_to_brackets(sentences[doc_key], predictions[doc_key])
         doc_id, part = get_reverse_doc_key(doc_key)
         if part is None:
             output_file.write("#begin document ({});\n\n".format(doc_id))
@@ -62,23 +96,11 @@ def output_conll(output_file, sentences, predictions):
             output_file.write(
                 "#begin document ({}); part {}\n\n".format(
                     doc_id, part))
-        word_index = 0
-        for sent in sentences[doc_key]:
+        for sent, brack_sent in zip(sentences[doc_key], brackets):
             for i, word in enumerate(sent):
-                coref_list = []
-                if word_index in end_map:
-                    for cluster_id in end_map[word_index]:
-                        coref_list.append("{})".format(cluster_id))
-                if word_index in word_map:
-                    for cluster_id in word_map[word_index]:
-                        coref_list.append("({})".format(cluster_id))
-                if word_index in start_map:
-                    for cluster_id in start_map[word_index]:
-                        coref_list.append("({}".format(cluster_id))
-                coref = '-' if len(coref_list) == 0 else "|".join(coref_list)
+                coref = brack_sent[i]
                 line = '\t'.join([doc_id, str(i), word, coref])
                 output_file.write(line + '\n')
-                word_index += 1
             output_file.write('\n')
         output_file.write('#end document\n')
 
