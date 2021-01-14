@@ -16,14 +16,16 @@ from . import metrics
 
 tf.disable_v2_behavior()
 
+logger = logging.getLogger('e2edutch')
+
 
 class CorefModel(object):
     def __init__(self, config):
         self.config = config
-        logging.info("Loading context embeddings..")
+        logger.info("Loading context embeddings..")
         self.context_embeddings = util.EmbeddingDictionary(
             config["context_embeddings"], config['datapath'])
-        logging.info("Loading head embeddings..")
+        logger.info("Loading head embeddings..")
         self.head_embeddings = util.EmbeddingDictionary(
             config["context_embeddings"], config['datapath'],
             maybe_cache=self.context_embeddings)
@@ -39,7 +41,7 @@ class CorefModel(object):
         else:
             self.lm_file = None
         if config["lm_model_name"]:
-            logging.info("Loading BERT model...")
+            logger.info("Loading BERT model...")
             self.bert_tokenizer, self.bert_model = bert.load_bert(
                 self.config["lm_model_name"])
         else:
@@ -122,7 +124,7 @@ class CorefModel(object):
         saver = tf.train.Saver(vars_to_restore)
         checkpoint_path = os.path.join(
             self.config["log_dir"], "model.max.ckpt")
-        logging.info("Restoring coref model from {}".format(checkpoint_path))
+        logger.info("Restoring coref model from {}".format(checkpoint_path))
         session.run(tf.global_variables_initializer())
         saver.restore(session, checkpoint_path)
 
@@ -830,7 +832,7 @@ class CorefModel(object):
                     example, is_training=False), example
             with open(self.config["eval_path"]) as f:
                 self.eval_data = [load_line(l) for l in f.readlines()]
-            logging.info("Loaded {} eval examples.".format(
+            logger.info("Loaded {} eval examples.".format(
                 len(self.eval_data)))
 
     def evaluate(self, session, official_stdout=False):
@@ -855,7 +857,7 @@ class CorefModel(object):
                 top_span_starts, top_span_ends, predicted_antecedents,
                 example["clusters"], coref_evaluator)
             if example_num % 10 == 0:
-                logging.info("Evaluated {}/{} examples.".format(
+                logger.info("Evaluated {}/{} examples.".format(
                     example_num + 1, len(self.eval_data)))
 
         summary_dict = {}
@@ -865,14 +867,14 @@ class CorefModel(object):
                           for results in conll_results.values())
                       / len(conll_results))
         summary_dict["Average F1 (conll)"] = average_f1
-        logging.info("Average F1 (conll): {:.2f}%".format(average_f1))
+        logger.info("Average F1 (conll): {:.2f}%".format(average_f1))
 
         p, r, f = coref_evaluator.get_prf()
         summary_dict["Average F1 (py)"] = f
-        logging.info("Average F1 (py): {:.2f}%".format(f * 100))
+        logger.info("Average F1 (py): {:.2f}%".format(f * 100))
         summary_dict["Average precision (py)"] = p
-        logging.info("Average precision (py): {:.2f}%".format(p * 100))
+        logger.info("Average precision (py): {:.2f}%".format(p * 100))
         summary_dict["Average recall (py)"] = r
-        logging.info("Average recall (py): {:.2f}%".format(r * 100))
+        logger.info("Average recall (py): {:.2f}%".format(r * 100))
 
         return util.make_summary(summary_dict), average_f1

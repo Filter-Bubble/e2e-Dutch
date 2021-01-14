@@ -8,7 +8,7 @@ import itertools
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('e2edutch')
 this_name = 'Coreference resolution based on e2e model'
 
 
@@ -20,7 +20,7 @@ def get_naf(input_filename):
             input = input_file.read()
         if "<NAF" in input and "</NAF>" in input:
             # I'm guessing this should be a NAF file but something is wrong
-            logging.exception("Error parsing NAF file")
+            logger.exception("Error parsing NAF file")
             raise
         naf = KafNafParser(type="NAF")
         naf.set_version("3.0")
@@ -66,7 +66,7 @@ def get_naf_from_sentences(sentences):
     count_terms = 0
     for sid, (sentence, token_ids_sub) in enumerate(zip(sentences, token_ids)):
         term_ids_sub = []
-        logging.info('Creating the term layer...')
+        logger.info('Creating the term layer...')
         for num_token, (token, token_id) in enumerate(
                 zip(sentence, token_ids_sub)):
             new_term_id = 't_' + str(count_terms)

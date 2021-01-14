@@ -9,6 +9,8 @@ import argparse
 from e2edutch import util
 from e2edutch import conll
 
+logger = logging.getLogger('e2edutch')
+
 
 class DocumentState(object):
     def __init__(self):
@@ -190,12 +192,12 @@ def minimize_partition_file(
         output_path = "{}.jsonlines".format(os.path.splitext(input_path)[0])
         output_file = open(output_path, "w")
     count = 0
-    logging.info("Minimizing {}".format(input_path))
+    logger.info("Minimizing {}".format(input_path))
     for document in minimize_partition(input_path, labels, stats, word_col):
         output_file.write(json.dumps(document))
         output_file.write("\n")
         count += 1
-    logging.info("Wrote {} documents to {}".format(count, output_path))
+    logger.info("Wrote {} documents to {}".format(count, output_path))
 
 
 def get_parser():

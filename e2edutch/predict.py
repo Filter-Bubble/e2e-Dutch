@@ -14,9 +14,13 @@ from e2edutch import naf
 
 import tensorflow.compat.v1 as tf
 
+logger = logging.getLogger('e2edutch')
+
 
 class Predictor(object):
-    def __init__(self, model_name='final', cfg_file=None):
+    def __init__(self, model_name='final', cfg_file=None, verbose=False):
+        if verbose:
+            logger.setLevel(logging.INFO)
         self.config = util.initialize_from_env(model_name, cfg_file)
         self.session = tf.compat.v1.Session()
         try:
@@ -88,7 +92,7 @@ def main(args=None):
     parser = get_parser()
     args = parser.parse_args()
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logger.setLevel(logging.INFO)
     # config = util.initialize_from_env(args.config, args.cfg_file)
 
     # Input file in .jsonlines format or .conll.
@@ -120,7 +124,6 @@ def main(args=None):
     sentences = {}
     predictions = {}
     for example_num, example in enumerate(docs):
-        # logging.info(example['doc_key'])
         example["predicted_clusters"], _ = predictor.predict(example)
         if args.format_out == 'jsonlines':
             output_file.write(json.dumps(example))
@@ -129,7 +132,7 @@ def main(args=None):
             predictions[example['doc_key']] = example["predicted_clusters"]
             sentences[example['doc_key']] = example["sentences"]
         if example_num % 100 == 0:
-            logging.info("Decoded {} examples.".format(example_num + 1))
+            logger.info("Decoded {} examples.".format(example_num + 1))
     if args.format_out == 'conll':
         conll.output_conll(output_file, sentences, predictions)
     elif args.format_out == 'naf':
@@ -137,7 +140,7 @@ def main(args=None):
         # Create naf obj if input format was not naf
         if ext_input != '.naf':
             # To do: add linguistic processing layers for terms and tokens
-            logging.warn(
+            logger.warn(
                 'Outputting NAF when input was not naf,'
                 + 'no dependency information available')
             for doc_key in sentences:

@@ -12,6 +12,8 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
+logger = logging.getLogger('e2edutch')
+
 
 def get_data_dir(config):
     if config.get('datapath', None) is not None:
@@ -29,7 +31,7 @@ def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
     else:
         set_gpus()
 
-    logging.info("Running model: {}".format(model_name))
+    logger.info("Running model: {}".format(model_name))
 
     if cfg_file is None:
         cfg_file = pkg_resources.resource_filename(
@@ -45,7 +47,7 @@ def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
 
     config["log_dir"] = mkdirs(os.path.join(config["log_root"], model_name))
 
-    logging.debug(pyhocon.HOCONConverter.convert(config, "hocon"))
+    logger.debug(pyhocon.HOCONConverter.convert(config, "hocon"))
     return config
 
 
@@ -78,7 +80,7 @@ def flatten(l):
 
 def set_gpus(*gpus):
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(g) for g in gpus)
-    logging.info("Setting CUDA_VISIBLE_DEVICES to: {}".format(
+    logger.info("Setting CUDA_VISIBLE_DEVICES to: {}".format(
         os.environ["CUDA_VISIBLE_DEVICES"]))
     for gpu in tf.config.experimental.list_physical_devices('GPU'):
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -243,7 +245,7 @@ class EmbeddingDictionary(object):
         return self._size
 
     def load_embedding_dict(self, path):
-        logging.info("Loading word embeddings from {}...".format(path))
+        logger.info("Loading word embeddings from {}...".format(path))
         default_embedding = np.zeros(self.size)
         embedding_dict = collections.defaultdict(lambda: default_embedding)
         if len(path) > 0:
@@ -258,7 +260,7 @@ class EmbeddingDictionary(object):
                     embedding_dict[word] = embedding
             if vocab_size is not None:
                 assert vocab_size == len(embedding_dict)
-            logging.info("Done loading word embeddings.")
+            logger.info("Done loading word embeddings.")
         return embedding_dict
 
     def __getitem__(self, key):
