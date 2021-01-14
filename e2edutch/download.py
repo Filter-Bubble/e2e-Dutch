@@ -57,7 +57,7 @@ def download_data(config={}):
         with zipfile.ZipFile(fname_zip, 'r') as zfile:
             zfile.extractall(data_dir)
         Path(data_dir / 'logs' / 'final').rename(log_dir_name)
-        Path(data_dir, 'logs').unlink()
+        Path(data_dir, 'logs').rmdir()
 
     # Download char_dict
     url = "https://github.com/Filter-Bubble/e2e-Dutch/raw/v0.2.0/data/char_vocab.dutch.txt"
