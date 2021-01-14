@@ -19,8 +19,13 @@ class Predictor(object):
     def __init__(self, model_name='final', cfg_file=None):
         self.config = util.initialize_from_env(model_name, cfg_file)
         self.session = tf.compat.v1.Session()
-        self.model = cm.CorefModel(self.config)
-        self.model.restore(self.session)
+        try:
+            self.model = cm.CorefModel(self.config)
+            self.model.restore(self.session)
+        except ValueError:
+            raise Exception("Trying to reload the model while the previous " +
+                            "session hasn't been ended. Close the existing " +
+                            "session with predictor.end_session()")
 
     def predict(self, example):
         """

@@ -29,7 +29,7 @@ def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
     else:
         set_gpus()
 
-    logging.info("Running experiment: {}".format(model_name))
+    logging.info("Running model: {}".format(model_name))
 
     if cfg_file is None:
         cfg_file = pkg_resources.resource_filename(
@@ -45,7 +45,7 @@ def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
 
     config["log_dir"] = mkdirs(os.path.join(config["log_root"], model_name))
 
-    logging.info(pyhocon.HOCONConverter.convert(config, "hocon"))
+    logging.debug(pyhocon.HOCONConverter.convert(config, "hocon"))
     return config
 
 

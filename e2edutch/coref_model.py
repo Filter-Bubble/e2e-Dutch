@@ -20,8 +20,10 @@ tf.disable_v2_behavior()
 class CorefModel(object):
     def __init__(self, config):
         self.config = config
+        logging.info("Loading context embeddings..")
         self.context_embeddings = util.EmbeddingDictionary(
             config["context_embeddings"], config['datapath'])
+        logging.info("Loading head embeddings..")
         self.head_embeddings = util.EmbeddingDictionary(
             config["context_embeddings"], config['datapath'],
             maybe_cache=self.context_embeddings)
@@ -37,6 +39,7 @@ class CorefModel(object):
         else:
             self.lm_file = None
         if config["lm_model_name"]:
+            logging.info("Loading BERT model...")
             self.bert_tokenizer, self.bert_model = bert.load_bert(
                 self.config["lm_model_name"])
         else:
@@ -119,7 +122,7 @@ class CorefModel(object):
         saver = tf.train.Saver(vars_to_restore)
         checkpoint_path = os.path.join(
             self.config["log_dir"], "model.max.ckpt")
-        logging.info("Restoring from {}".format(checkpoint_path))
+        logging.info("Restoring coref model from {}".format(checkpoint_path))
         session.run(tf.global_variables_initializer())
         saver.restore(session, checkpoint_path)
 
