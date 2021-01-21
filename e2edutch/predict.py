@@ -18,11 +18,18 @@ logger = logging.getLogger('e2edutch')
 
 
 class Predictor(object):
-    def __init__(self, model_name='final', cfg_file=None, verbose=False):
+    def __init__(self, model_name='final', config=None, verbose=False):
         if verbose:
             logger.setLevel(logging.INFO)
-        self.config = util.initialize_from_env(model_name, cfg_file)
+
+        if config:
+            self.config = config
+        else:
+            # if no configuration is provided, try to get a default config.
+            self.config = util.initialize_from_env(model_name=model_name)
+
         self.session = tf.compat.v1.Session()
+
         try:
             self.model = cm.CorefModel(self.config)
             self.model.restore(self.session)
@@ -93,7 +100,6 @@ def main(args=None):
     args = parser.parse_args()
     if args.verbose:
         logger.setLevel(logging.INFO)
-    # config = util.initialize_from_env(args.config, args.cfg_file)
 
     # Input file in .jsonlines format or .conll.
     input_filename = args.input_filename
@@ -120,7 +126,10 @@ def main(args=None):
         docs = [util.create_example(text)]
 
     output_file = args.output_file
-    predictor = Predictor(args.config, args.cfg_file)
+
+    config = util.initialize_from_env(cfg_file=args.cfg_file, model_cfg_file=args.config)
+    predictor = Predictor(config=config)
+
     sentences = {}
     predictions = {}
     for example_num, example in enumerate(docs):

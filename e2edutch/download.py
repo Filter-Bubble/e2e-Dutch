@@ -28,8 +28,8 @@ def download_file(url, path):
 
 
 def download_data(config={}):
-    data_dir = Path(util.get_data_dir(config))
     # Create the data directory if it doesn't exist yet
+    data_dir = Path(config['datapath'])
     data_dir.mkdir(parents=True, exist_ok=True)
 
     # Download word vectors
@@ -68,7 +68,8 @@ def download_data(config={}):
 
 def main():
     # To do: argparse for config file
-    download_data()
+    config = util.initialize_from_env(model_name='final')
+    download_data(config)
 
 
 if __name__ == "__main__":
