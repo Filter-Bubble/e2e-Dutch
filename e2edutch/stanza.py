@@ -1,5 +1,8 @@
+import os
 import stanza
 import logging
+
+from pathlib import Path
 
 from e2edutch import util
 from e2edutch import coref_model as cm
@@ -11,8 +14,9 @@ from stanza.models.common.doc import Document
 
 import tensorflow.compat.v1 as tf
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('e2edutch')
 logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler())
 
 
 @register_processor('coref')
@@ -24,33 +28,47 @@ class CorefProcessor(Processor):
     def __init__(self, config, pipeline, use_gpu):
         # Make e2edutch follow Stanza's GPU settings:
         # set the environment value for GPU, so that initialize_from_env picks it up.
-        if use_gpu:
-            os.environ['GPU'] = ' '.join(tf.config.experimental.list_physical_devices('GPU'))
-        else:
-            os.environ['GPU'] = ''
+        #if use_gpu:
+        #    os.environ['GPU'] = ' '.join(tf.config.experimental.list_physical_devices('GPU'))
+        #else:
+        #    if 'GPU' in os.environ['GPU'] :
+        #        os.environ.pop('GPU')
 
         self.e2econfig = util.initialize_from_env(model_name='final')
 
-        # Override datapath:
+        # Override datapath and log_root:
         # store e2edata with the Stanza resources, ie. a 'stanza_resources/nl/coref' directory
         self.e2econfig['datapath'] = Path(config['model_path']).parent
+        self.e2econfig['log_root'] = Path(config['model_path']).parent
 
         # Download data files if not present
         download_data(self.e2econfig)
+
+        # Start and stop a session to cache all models
+        predictor = Predictor(config=self.e2econfig)
+        predictor.end_session()
 
     def _set_up_model(self, *args):
         print ('_set_up_model')
         pass
 
     def process(self, doc):
-        self.predictor = Predictor(config=self.e2econfig)
 
-        for sent_id, sentence in enumerate(doc.sentences):
-            tokenized = ' '.join(w.text for w in sentence.words)
+        predictor = Predictor(config=self.e2econfig)
 
-            predicted_clusters, _ = self.predictor.predict(tokenized)
-            print(predicted_clusters)
+        # build the example argument for predict:
+        #   example (dict): dict with the following fields:
+        #                     sentences ([[str]])
+        #                     doc_id (str)
+        #                     clusters ([[(int, int)]]) (optional)
+        example = {}
+        example['sentences'] = [sentence.text for sentence in doc.sentences]
+        example['doc_id'] = 'document_from_stanza'
+        example['doc_key'] = 'undocumented'
 
-        self.predictor.end_session()
+        # predicted_clusters, _ = predictor.predict(example)
+        print(predictor.predict(example))
+
+        predictor.end_session()
 
         return doc

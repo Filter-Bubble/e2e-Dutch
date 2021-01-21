@@ -50,11 +50,13 @@ def initialize_from_env(model_name='final', cfg_file=None, model_cfg_file=None):
         config['datapath'] = os.environ['E2E_HOME']
 
     # Finally, provide fallback for datapath
-    if config.get('datapath', None) is not None:
+    if config.get('datapath', None) is None:
         config['datapath'] = Path(__file__).parent / "data"
 
     config['log_root'] = config['datapath']
-    config['log_dir'] = mkdirs(os.path.join(config['log_root'], model_name))
+    config['log_dir'] = model_name
+
+    mkdirs(os.path.join(config['log_root'], config['log_dir']))
 
     logger.debug(pyhocon.HOCONConverter.convert(config, 'hocon'))
     return config

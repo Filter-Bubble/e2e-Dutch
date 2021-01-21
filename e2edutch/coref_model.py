@@ -18,21 +18,41 @@ tf.disable_v2_behavior()
 
 logger = logging.getLogger('e2edutch')
 
+# When running as a Stanza Processor, we will be instantiating the CorefModel
+# for each call to the pipeline, making interactive use impossible
+# To speed things up, cache the slowest part here.
+e2e_cached_embedding = None
+e2e_cached_bert_model = None
+e2e_cached_bert_tokenizer = None
+
 
 class CorefModel(object):
     def __init__(self, config):
+        # these are variables in the outer scope
+        global e2e_cached_embedding
+        global e2e_cached_bert_tokenizer
+        global e2e_cached_bert_model
+
         self.config = config
+
         logger.info("Loading context embeddings..")
         self.context_embeddings = util.EmbeddingDictionary(
-            config["context_embeddings"], config['datapath'])
+            config["context_embeddings"], config['datapath'],
+            maybe_cache=e2e_cached_embedding)
+
+        # cache the embeddings for reuse
+        e2e_cached_embedding = self.context_embeddings
+
         logger.info("Loading head embeddings..")
         self.head_embeddings = util.EmbeddingDictionary(
             config["context_embeddings"], config['datapath'],
-            maybe_cache=self.context_embeddings)
+            maybe_cache=e2e_cached_embedding)
+
         self.char_embedding_size = config["char_embedding_size"]
         self.char_dict = util.load_char_dict(
             os.path.join(config['datapath'],
                          config["char_vocab_path"]))
+
         self.max_span_width = config["max_span_width"]
         self.genres = {g: i for i, g in enumerate(config["genres"])}
         if config["lm_path"]:
@@ -40,10 +60,21 @@ class CorefModel(object):
                                                   self.config["lm_path"]), "r")
         else:
             self.lm_file = None
+
         if config["lm_model_name"]:
             logger.info("Loading BERT model...")
-            self.bert_tokenizer, self.bert_model = bert.load_bert(
-                self.config["lm_model_name"])
+            if e2e_cached_bert_model and e2e_cached_bert_tokenizer:
+                # reuse cached version
+                self.bert_tokenizer = e2e_cached_bert_tokenizer
+                self.bert_model = e2e_cached_bert_model
+            else:
+                # load the model...
+                self.bert_tokenizer, self.bert_model = bert.load_bert(
+                    self.config["lm_model_name"])
+
+                # ...and cache for next time
+                e2e_cached_bert_tokenizer = self.bert_tokenizer
+                e2e_cached_bert_model = self.bert_model
         else:
             self.bert_tokenizer = None
             self.bert_model = None
@@ -53,15 +84,19 @@ class CorefModel(object):
 
         input_props = []
         input_props.append((tf.string, [None, None]))  # Tokens.
+
         # Context embeddings.
         input_props.append(
             (tf.float32, [None, None, self.context_embeddings.size]))
+
         # Head embeddings.
         input_props.append(
             (tf.float32, [None, None, self.head_embeddings.size]))
+
         # LM embeddings.
         input_props.append(
             (tf.float32, [None, None, self.lm_size, self.lm_layers]))
+
         # Character indices.
         input_props.append((tf.int32, [None, None, None]))
         input_props.append((tf.int32, [None]))  # Text lengths..
@@ -123,7 +158,8 @@ class CorefModel(object):
             v for v in tf.global_variables() if "module/" not in v.name]
         saver = tf.train.Saver(vars_to_restore)
         checkpoint_path = os.path.join(
-            self.config["log_dir"], "model.max.ckpt")
+            self.config['log_root'], self.config['log_dir'], "model.max.ckpt")
+
         logger.info("Restoring coref model from {}".format(checkpoint_path))
         session.run(tf.global_variables_initializer())
         saver.restore(session, checkpoint_path)
