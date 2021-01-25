@@ -1,5 +1,5 @@
-import e2edutch.stanza
 import stanza
+import e2edutch.stanza
 import tensorflow.compat.v1 as tf
 
 
