@@ -22,6 +22,25 @@ pip install .
 
 The `setup_all` script downloads the word vector files to the `data` directories. It also builds the application-specific tensorflow kernels.
 
+## Quick start - Stanza
+
+e2edutch can be used as part of a Stanza pipeline.
+
+Coreferences are added similarly to Stanza's entities:
+ * a ___Document___ has an attribute ___clusters___ that is a List of coreference clusters;
+ * a coreference cluster is a List of Stanza ___Spans___.
+
+```
+import stanza
+import e2edutch.stanza
+
+nlp = stanza.Pipeline(lang='nl', processors='tokenize,coref')
+
+doc = nlp('Dit is een test document. Dit document bevat coreferenties.')
+print ([[span.text for span in cluster] for cluster in doc.clusters])
+```
+
+
 ## Quick start
 A pretrained model is available to download:
 ```

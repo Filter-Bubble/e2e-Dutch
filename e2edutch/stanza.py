@@ -10,7 +10,19 @@ from e2edutch.download import download_data
 from e2edutch.predict import Predictor
 
 from stanza.pipeline.processor import Processor, register_processor
-from stanza.models.common.doc import Document
+from stanza.models.common.doc import Document, Span
+
+
+# Add a Clusters property to documents as a List of List of Span:
+# Clusters is a List of cluster, cluster is a List of Span
+def clusterSetter(self, value):
+    if isinstance(value, type([])):
+        self.clusters = value
+    else:
+        logger.error('Clusters must be a List')
+
+stanza.models.common.doc.Document.add_property('clusters', default='[]', setter=clusterSetter)
+
 
 import tensorflow.compat.v1 as tf
 
@@ -62,12 +74,56 @@ class CorefProcessor(Processor):
         #                     doc_id (str)
         #                     clusters ([[(int, int)]]) (optional)
         example = {}
-        example['sentences'] = [sentence.text for sentence in doc.sentences]
-        example['doc_id'] = 'document_from_stanza'
-        example['doc_key'] = 'undocumented'
+        example['sentences'] = []
+        example['doc_id'] = 'document_from_stanza'  # TODO check what this should be
+        example['doc_key'] = 'undocumented'  # TODO check what this should be
 
-        # predicted_clusters, _ = predictor.predict(example)
-        print(predictor.predict(example))
+        for sentence in doc.sentences:
+            s = []
+            for word in sentence.words:
+                s.append(word.text)
+            example['sentences'].append(s)
+
+        predicted_clusters = predictor.predict(example)  # a list of tuples
+
+        # Add the predicted clusters back to the Stanza document
+
+        clusters = []
+        for predicted_cluster in predicted_clusters:  # a tuple of entities
+            cluster = []
+            for predicted_reference in predicted_cluster:  # a tuple of (start, end) word
+                start, end = predicted_reference
+
+                # find the sentence_id of the sentence containing this reference
+                sentence_id = 0
+                sentence = doc.sentences[0]
+                sentence_start_word = 0
+                sentence_end_word = len(sentence.words) - 1
+
+                while sentence_end_word < start:
+                    sentence_start_word = sentence_end_word + 1
+
+                    # move to the next sentence
+                    sentence_id += 1
+                    sentence = doc.sentences[sentence_id]
+
+                    sentence_end_word = sentence_start_word + len(sentence.words) - 1
+
+                # start counting words from the start of this sentence
+                start -= sentence_start_word
+                end -= sentence_start_word
+
+                span = Span(  # a list of Tokens
+                        tokens=[word.parent for word in sentence.words[start:end + 1]],
+                        doc=doc,
+                        type='COREF',
+                        sent=doc.sentences[sentence_id]
+                        )
+                cluster.append(span)
+
+            clusters.append(cluster)
+
+        doc.clusters = clusters
 
         predictor.end_session()
 
