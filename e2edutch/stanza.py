@@ -17,7 +17,7 @@ from stanza.models.common.doc import Document, Span
 # Clusters is a List of cluster, cluster is a List of Span
 def clusterSetter(self, value):
     if isinstance(value, type([])):
-        self.clusters = value
+        self._clusters = value
     else:
         logger.error('Clusters must be a List')
 
