@@ -13,6 +13,9 @@ jobs:
   build:
 
     runs-on: ${{ matrix.os }}
+    env:
+      STANZA_RESOURCES_DIR: $GITHUB_WORKSPACE/data
+      E2E_HOME: $GITHUB_WORKSPACE/data/nl/coref
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
@@ -35,10 +38,10 @@ jobs:
         python setup.py install
     - name: Download models
       run: |
-        export STANZA_RESOURCES_DIR=./data
-        python -c 'import stanza; stanza.download("nl", dir="./data")'
-        export E2E_HOME=./data/nl/coref
-        python -m e2edutch.download -d $E2E_HOME
+        echo "stanza home: $STANZA_RESOURCES_DIR"
+        echo "e2e home: $E2E_HOME"
+        python -c 'import stanza; stanza.download("nl")'
+        python -m e2edutch.download -v
     - name: Test with pytest
       run: |
         pytest --cov=./e2edutch --cov-report=xml
