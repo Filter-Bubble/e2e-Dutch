@@ -35,7 +35,9 @@ jobs:
         python setup.py install
     - name: Download models
       run: |
-        python -m e2edutch.download
+        python -m 'import stanza; stanza.download("nl", dir="./data")'
+        export E2E_HOME=./data/nl/coref
+        python -m e2edutch.download -d $E2E_HOME
     - name: Test with pytest
       run: |
         pytest --cov=./e2edutch --cov-report=xml
