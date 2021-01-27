@@ -51,7 +51,8 @@ def download_data(config={}):
     url = "https://surfdrive.surf.nl/files/index.php/s/UnZMyDrBEFunmQZ/download"
     fname_zip = data_dir / 'model.zip'
     log_dir_name = data_dir / 'final'
-    if not fname_zip.exists() and not log_dir_name.exists():
+    model_file = log_dir_name / 'model.max.ckpt.index'
+    if not fname_zip.exists() and not model_file.exists():
         download_file(url, fname_zip)
     if not log_dir_name.exists():
         with zipfile.ZipFile(fname_zip, 'r') as zfile:
