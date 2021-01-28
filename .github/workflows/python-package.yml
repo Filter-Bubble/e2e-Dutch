@@ -12,10 +12,7 @@ on:
 jobs:
   build:
 
-    runs-on: ${{ matrix.os }}
-    env:
-      STANZA_RESOURCES_DIR: $GITHUB_WORKSPACE/data
-      E2E_HOME: $GITHUB_WORKSPACE/data/nl/coref
+    runs-on: ${{ matrix.os }}f
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
@@ -36,6 +33,10 @@ jobs:
     - name: Install package
       run: |
         python setup.py install
+    - name: Set environment variables
+      run: |
+        echo "STANZA_RESOURCES_DIR=$HOME/data" >> $GITHUB_ENV
+        echo "E2E_HOME=$HOME/data/nl/coref" >> $GITHUB_ENV
     - name: Download models
       run: |
         echo "stanza home: $STANZA_RESOURCES_DIR"
