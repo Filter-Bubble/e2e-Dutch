@@ -69,7 +69,8 @@ setuptools.setup(
         "scikit-learn",
         "torch",
         "transformers<=3.5.1",
-        "KafNafParserPy"
+        "KafNafParserPy",
+        "stanza"
     ],
     tests_require=[
         'pytest',

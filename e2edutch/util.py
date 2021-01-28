@@ -15,23 +15,25 @@ tf.disable_v2_behavior()
 logger = logging.getLogger('e2edutch')
 
 
-def get_data_dir(config):
-    if config.get('datapath', None) is not None:
-        path = config['datapath']
-    elif os.environ.get('E2E_HOME', None) is not None:
-        path = os.environ['E2E_HOME']
-    else:
-        path = Path(__file__).parent / "data"
-    return path
+def initialize_from_env(model_name='final', cfg_file=None, model_cfg_file=None):
+    '''Read configuration files
+
+    Read configuration files cfg_file and model_cfg_file from provided
+    filenames. If none given, use default config files provided by e2edutch:
+        cfg/defaults.conf for cfg_file, and
+        cfg/models.conf for model_cfg_file
 
 
-def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
+    Configure Tensorflow to use a gpu or cpu based on the environment values of GPU.
+
+    Returns a config dict
+    '''
     if "GPU" in os.environ:
         set_gpus(int(os.environ["GPU"]))
     else:
         set_gpus()
 
-    logger.info("Running model: {}".format(model_name))
+    logger.info('Running model: {}'.format(model_name))
 
     if cfg_file is None:
         cfg_file = pkg_resources.resource_filename(
@@ -42,12 +44,21 @@ def initialize_from_env(model_name, cfg_file=None, model_cfg_file=None):
     config_base = pyhocon.ConfigFactory.parse_file(cfg_file)
     config_model = pyhocon.ConfigFactory.parse_file(model_cfg_file)[model_name]
     config = pyhocon.ConfigTree.merge_configs(config_model, config_base)
-    config['datapath'] = get_data_dir(config)
+
+    # Override datapath from environment, if set
+    if os.environ.get('E2E_HOME', None) is not None:
+        config['datapath'] = os.environ['E2E_HOME']
+
+    # Finally, provide fallback for datapath
+    if config.get('datapath', None) is None:
+        config['datapath'] = Path(__file__).parent / "data"
+
     config['log_root'] = config['datapath']
+    config['log_dir'] = model_name
 
-    config["log_dir"] = mkdirs(os.path.join(config["log_root"], model_name))
+    mkdirs(os.path.join(config['log_root'], config['log_dir']))
 
-    logger.debug(pyhocon.HOCONConverter.convert(config, "hocon"))
+    logger.debug(pyhocon.HOCONConverter.convert(config, 'hocon'))
     return config
 
 

@@ -33,9 +33,16 @@ jobs:
     - name: Install package
       run: |
         python setup.py install
+    - name: Set environment variables
+      run: |
+        echo "STANZA_RESOURCES_DIR=$HOME/data" >> $GITHUB_ENV
+        echo "E2E_HOME=$HOME/data/nl/coref" >> $GITHUB_ENV
     - name: Download models
       run: |
-        python -m e2edutch.download
+        echo "stanza home: $STANZA_RESOURCES_DIR"
+        echo "e2e home: $E2E_HOME"
+        python -c 'import stanza; stanza.download("nl")'
+        python -m e2edutch.download -v
     - name: Test with pytest
       run: |
         pytest --cov=./e2edutch --cov-report=xml

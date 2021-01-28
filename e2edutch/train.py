@@ -58,7 +58,7 @@ def main(args=None):
     model = cm.CorefModel(config)
     saver = tf.train.Saver()
 
-    log_dir = config["log_dir"]
+    log_dir = os.path.join(config['log_root'], config['log_dir'])
     writer = tf.summary.FileWriter(log_dir, flush_secs=20)
 
     max_f1 = 0
