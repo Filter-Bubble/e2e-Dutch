@@ -62,7 +62,7 @@ def download_data(config={}):
     model_file = log_dir_name / 'model.max.ckpt.index'
     if not fname_zip.exists() and not model_file.exists():
         download_file(url, fname_zip)
-    if not log_dir_name.exists():
+    if not model_file.exists():
         with zipfile.ZipFile(fname_zip, 'r') as zfile:
             zfile.extractall(data_dir)
         Path(data_dir / 'logs' / 'final').rename(log_dir_name)
