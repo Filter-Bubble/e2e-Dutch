@@ -73,11 +73,12 @@ def make_summary(value_dict):
 
 
 def create_example(text, doc_key='example'):
-    import nltk
-    nltk.download("punkt")
-    from nltk.tokenize import sent_tokenize, word_tokenize
-    raw_sentences = sent_tokenize(text)
-    sentences = [word_tokenize(s, language='dutch') for s in raw_sentences]
+    import stanza
+    stanza.download('nl')
+    nlp = stanza.Pipeline('nl', processors='tokenize')
+    doc = nlp(text)
+    sentences = [[token['text'] for token in sentence]
+                 for sentence in doc.to_dict()]
     return {
         "doc_key": doc_key,
         "clusters": [],

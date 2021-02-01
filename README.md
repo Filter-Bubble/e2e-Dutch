@@ -51,7 +51,7 @@ It can also be set manually by specifying the enviornment vairable `E2E_HOME` or
 
 
 
-The pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the nltk package will be used for tokenization).
+The pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the stanza package will be used for tokenization).
 ```
 python -m e2edutch.predict [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}]
                   [-c WORD_COL] [--cfg_file CFG_FILE] [-v]

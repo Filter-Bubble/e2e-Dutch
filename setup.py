@@ -63,7 +63,6 @@ setuptools.setup(
     install_requires=[
         "tensorflow>=2.0.0",
         "h5py",
-        "nltk",
         "pyhocon",
         "scipy",
         "scikit-learn",
