@@ -1,3 +1,4 @@
+import tensorflow.compat.v1 as tf
 import os
 import stanza
 import logging
@@ -21,10 +22,9 @@ def clusterSetter(self, value):
     else:
         logger.error('Clusters must be a List')
 
+
 stanza.models.common.doc.Document.add_property('clusters', default='[]', setter=clusterSetter)
 
-
-import tensorflow.compat.v1 as tf
 
 logger = logging.getLogger('e2edutch')
 logger.setLevel(logging.INFO)
@@ -33,16 +33,20 @@ logger.addHandler(logging.StreamHandler())
 
 @register_processor('coref')
 class CorefProcessor(Processor):
-    ''' Processor that appends coreference information '''
+    ''' Processor that appends coreference information
+    Coreferences are added similarly to Stanza's entities:
+    * a Document has an attribute clusters that is a List of coreference clusters;
+    * a coreference cluster is a List of Stanza Spans.
+    '''
     _requires = set(['tokenize'])
     _provides = set(['coref'])
-    
+
     def __init__(self, config, pipeline, use_gpu):
         # Make e2edutch follow Stanza's GPU settings:
         # set the environment value for GPU, so that initialize_from_env picks it up.
-        #if use_gpu:
+        # if use_gpu:
         #    os.environ['GPU'] = ' '.join(tf.config.experimental.list_physical_devices('GPU'))
-        #else:
+        # else:
         #    if 'GPU' in os.environ['GPU'] :
         #        os.environ.pop('GPU')
 
@@ -61,7 +65,7 @@ class CorefProcessor(Processor):
         predictor.end_session()
 
     def _set_up_model(self, *args):
-        print ('_set_up_model')
+        print('_set_up_model')
         pass
 
     def process(self, doc):
@@ -114,11 +118,11 @@ class CorefProcessor(Processor):
                 end -= sentence_start_word
 
                 span = Span(  # a list of Tokens
-                        tokens=[word.parent for word in sentence.words[start:end + 1]],
-                        doc=doc,
-                        type='COREF',
-                        sent=doc.sentences[sentence_id]
-                        )
+                    tokens=[word.parent for word in sentence.words[start:end + 1]],
+                    doc=doc,
+                    type='COREF',
+                    sent=doc.sentences[sentence_id]
+                )
                 cluster.append(span)
 
             clusters.append(cluster)

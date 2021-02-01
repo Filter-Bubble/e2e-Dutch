@@ -76,4 +76,6 @@ setuptools.setup(
         'pytest-cov',
         'pycodestyle',
     ],
+    extras_require={"doc": ["sphinx",
+                            "m2r2"]}
 )

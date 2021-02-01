@@ -18,6 +18,11 @@ logger = logging.getLogger('e2edutch')
 
 
 class Predictor(object):
+    """
+    A predictor object loads a pretrained e2e model to predict coreferences.
+    It can be used to predict coreferences on tokenized text.
+    """
+
     def __init__(self, model_name='final', config=None, verbose=False):
         if verbose:
             logger.setLevel(logging.INFO)
@@ -68,6 +73,9 @@ class Predictor(object):
         return predicted_clusters
 
     def end_session(self):
+        """
+        Close the session, clearing the tensorflow model context.
+        """
         self.session.close()
         tf.reset_default_graph()
 
