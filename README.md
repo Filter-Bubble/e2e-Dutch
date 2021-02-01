@@ -24,7 +24,7 @@ The `setup_all` script downloads the word vector files to the `data` directories
 
 ## Quick start - Stanza
 
-e2edutch can be used as part of a Stanza pipeline.
+e2edutch can be used as part of a [Stanza](https://stanfordnlp.github.io/stanza/) pipeline.
 
 Coreferences are added similarly to Stanza's entities:
  * a ___Document___ has an attribute ___clusters___ that is a List of coreference clusters;
@@ -40,14 +40,16 @@ doc = nlp('Dit is een test document. Dit document bevat coreferenties.')
 print ([[span.text for span in cluster] for cluster in doc.clusters])
 ```
 
+Note that you first need to download the stanza models with `stanza.download('nl')`.
+The e2e-Dutch model files are automatically downloaded to the stanza resources directory when loading the pipeline. 
 
 ## Quick start
 A pretrained model is available to download:
 ```
-python -m e2edutch.download
+python -m e2edutch.download [-d DATAPATH]
 ```
 This downloads the model files, the default location is the `data` directory inside the python package location.
-It can also be set manually by specifying the enviornment vairable `E2E_HOME` or through the config file (see below).
+It can also be set manually with the `DATAPATH` argument, or by specifying the enviornment vairable `E2E_HOME`.
 
 
 
