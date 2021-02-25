@@ -33,6 +33,8 @@ class Predictor(object):
             # if no configuration is provided, try to get a default config.
             self.config = util.initialize_from_env(model_name=model_name)
 
+        # Clear tensorflow context:
+        tf.reset_default_graph()
         self.session = tf.compat.v1.Session()
 
         try:
