@@ -66,7 +66,7 @@ setuptools.setup(
         "pyhocon",
         "scipy",
         "scikit-learn",
-        "torch",
+        "torch<=1.7.1",
         "transformers<=3.5.1",
         "KafNafParserPy",
         "stanza"
