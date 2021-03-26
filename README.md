@@ -12,15 +12,19 @@ If you make use of this code, please [cite it](#citing-this-code) and also cite 
 Requirements:
 - Python 3.6 or 3.7
 - pip
+- tensorflow v2.0.0 or higher
 
 In this repository, run:
 ```
 pip install -r requirements.txt
-./scripts/setup_all.sh
 pip install .
 ```
 
-The `setup_all` script downloads the word vector files to the `data` directories. It also builds the application-specific tensorflow kernels.
+Alternatively, you can install directly from Pypi:
+```
+pip install tensorflow
+pip install e2e-Dutch
+```
 
 ## Quick start - Stanza
 
@@ -41,7 +45,7 @@ print ([[span.text for span in cluster] for cluster in doc.clusters])
 ```
 
 Note that you first need to download the stanza models with `stanza.download('nl')`.
-The e2e-Dutch model files are automatically downloaded to the stanza resources directory when loading the pipeline. 
+The e2e-Dutch model files are automatically downloaded to the stanza resources directory when loading the pipeline.
 
 ## Quick start
 A pretrained model is available to download:
