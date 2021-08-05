@@ -8,6 +8,8 @@
 Code for e2e coref model in Dutch. The code is based on the [original e2e model for English](https://github.com/kentonl/e2e-coref), and modified to work for Dutch.
 If you make use of this code, please [cite it](#citing-this-code) and also cite [the original e2e paper](https://arxiv.org/abs/1804.05392).
 
+This code can be used with a pre-trained model for Dutch, trained on the SoNaR-1 dataset. The model file and documentation can be found at [10.5281/zenodo.5153574](https://zenodo.org/record/5153575)
+
 ## Installation
 Requirements:
 - Python 3.6 or 3.7
