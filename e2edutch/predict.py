@@ -152,7 +152,7 @@ def main(args=None):
     sentences = {}
     predictions = {}
     for example_num, example in enumerate(docs):
-        example["predicted_clusters"], _ = predictor.predict(example)
+        example["predicted_clusters"] = predictor.predict(example)
         if args.format_out == 'jsonlines':
             output_file.write(json.dumps(example))
             output_file.write("\n")
