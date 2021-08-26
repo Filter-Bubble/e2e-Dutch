@@ -61,25 +61,24 @@ It can also be set manually with the `DATAPATH` argument, or by specifying the e
 
 The pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the stanza package will be used for tokenization).
 ```
-python -m e2edutch.predict [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}]
-                  [-c WORD_COL] [--cfg_file CFG_FILE] [-v]
-                  config input_filename
+python -m e2edutch.predict.py [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}] [-m MODEL] [-c WORD_COL] [--cfg_file CFG_FILE] [--model_cfg_file MODEL_CFG_FILE] [-v] input_filename
 
 positional arguments:
-  config: name of the model to use for prediction ('final' for the pretrained)
   input_filename
 
 optional arguments:
   -h, --help            show this help message and exit
   -o OUTPUT_FILE, --output_file OUTPUT_FILE
   -f {conll,jsonlines,naf}, --format_out {conll,jsonlines,naf}
+  -m MODEL, --model MODEL
+                        model name
   -c WORD_COL, --word_col WORD_COL
   --cfg_file CFG_FILE   config file
+  --model_cfg_file MODEL_CFG_FILE
+                        model config file
   -v, --verbose
-
-
 ```
-The user-specific configurations (such as data directory, data files, etc) can be provided in a separate config file, the defaults are specified in `cfg/defaults.conf`.
+The user-specific configurations (such as data directory, data files, etc) can be provided in a separate config file, the defaults are specified in `cfg/defaults.conf`. The options ` model_cfg_file` and `model` are relevant when you want to use a user-specified model instead of the pretrained model to predict (see the section below on how to train a model).
 
 
 ## Train your own model

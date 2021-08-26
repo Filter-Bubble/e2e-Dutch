@@ -84,17 +84,24 @@ class Predictor(object):
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('config')
     parser.add_argument('input_filename')
     parser.add_argument('-o', '--output_file',
                         type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('-f', '--format_out', default='conll',
                         choices=['conll', 'jsonlines', 'naf'])
+    parser.add_argument('-m', '--model',
+                        type=str,
+                        default='final',
+                        help="model name")
     parser.add_argument('-c', '--word_col', type=int, default=2)
     parser.add_argument('--cfg_file',
                         type=str,
                         default=None,
                         help="config file")
+    parser.add_argument('--model_cfg_file',
+                        type=str,
+                        default=None,
+                        help="model config file")
     parser.add_argument('-v', '--verbose', action='store_true')
     return parser
 
@@ -137,13 +144,15 @@ def main(args=None):
 
     output_file = args.output_file
 
-    config = util.initialize_from_env(cfg_file=args.cfg_file, model_cfg_file=args.config)
+    config = util.initialize_from_env(model_name=args.model,
+                                      cfg_file=args.cfg_file,
+                                      model_cfg_file=args.model_cfg_file)
     predictor = Predictor(config=config)
 
     sentences = {}
     predictions = {}
     for example_num, example in enumerate(docs):
-        example["predicted_clusters"], _ = predictor.predict(example)
+        example["predicted_clusters"] = predictor.predict(example)
         if args.format_out == 'jsonlines':
             output_file.write(json.dumps(example))
             output_file.write("\n")
