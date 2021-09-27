@@ -19,7 +19,7 @@ Requirements:
 In this repository, run:
 ```
 pip install -r requirements.txt
-pip install .
+python setup.py install
 ```
 
 Alternatively, you can install directly from Pypi:
