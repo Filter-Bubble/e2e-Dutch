@@ -58,8 +58,9 @@ stanza.download('nl') # This downloads the stanza models if not yet available
 
 nlp = stanza.Pipeline(lang='nl', processors='tokenize,coref')
 
-doc = nlp('Dit is een test document. Dit document bevat coreferenties.')
+doc = nlp('Jan liep met Fido over straat. Hij wilde oversteken maar de hond wilde niet.')
 print ([[span.text for span in cluster] for cluster in doc.clusters])
+# Output: doc = nlp('Jan liep met Fido over straat. Hij wilde oversteken maar de hond wilde niet.')
 ```
 
 The e2e-Dutch model files are automatically downloaded to the stanza resources directory when loading the pipeline.
