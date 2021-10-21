@@ -21,10 +21,25 @@ pip install -r requirements.txt
 python setup.py install
 ```
 
-Alternatively, you can install directly from Pypi:
+Alternatively, you can install directly from Pypi (this might not work for all operating systems):
 ```
 pip install tensorflow
 pip install e2e-Dutch
+```
+
+### For developers
+If you plan to make changes to the code, or train your own model, make sure to install e2e-Dutch in developers mode:
+```
+pip install -r requirements.txt
+python setup.py install
+pip install pytest pytest-cov
+```
+
+And then run the tests to see whether installation has run correctly:
+```
+python -c 'import stanza; stanza.download("nl")'
+python -m e2edutch.download -v
+python setup.py test
 ```
 
 ## Quick start - Stanza
@@ -39,13 +54,14 @@ Coreferences are added similarly to Stanza's entities:
 import stanza
 import e2edutch.stanza
 
+stanza.download('nl') # This downloads the stanza models if not yet available
+
 nlp = stanza.Pipeline(lang='nl', processors='tokenize,coref')
 
 doc = nlp('Dit is een test document. Dit document bevat coreferenties.')
 print ([[span.text for span in cluster] for cluster in doc.clusters])
 ```
 
-Note that you first need to download the stanza models with `stanza.download('nl')`.
 The e2e-Dutch model files are automatically downloaded to the stanza resources directory when loading the pipeline.
 
 ## Quick start
@@ -60,7 +76,7 @@ It can also be set manually with the `DATAPATH` argument, or by specifying the e
 
 The pretrained model can be used to predict coreferences on a conll 2012 files, jsonlines files, [NAF files](https://github.com/newsreader/NAF) or plain text files (in the latter case, the stanza package will be used for tokenization).
 ```
-python -m e2edutch.predict.py [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}] [-m MODEL] [-c WORD_COL] [--cfg_file CFG_FILE] [--model_cfg_file MODEL_CFG_FILE] [-v] input_filename
+python -m e2edutch.predict [-h] [-o OUTPUT_FILE] [-f {conll,jsonlines,naf}] [-m MODEL] [-c WORD_COL] [--cfg_file CFG_FILE] [--model_cfg_file MODEL_CFG_FILE] [-v] input_filename
 
 positional arguments:
   input_filename
