@@ -96,6 +96,36 @@ optional arguments:
 ```
 The user-specific configurations (such as data directory, data files, etc) can be provided in a separate config file, the defaults are specified in `cfg/defaults.conf`. The options ` model_cfg_file` and `model` are relevant when you want to use a user-specified model instead of the pretrained model to predict (see the section below on how to train a model).
 
+### Example
+An example of using the predict script:
+```bash
+echo "Jan liep met Fido over straat. Hij wilde oversteken maar de hond wilde niet." > example.txt
+python -m e2edutch.predict example.txt
+```
+Gives output:
+```
+#begin document (example);
+
+example	0	Jan	(0)
+example	1	liep	-
+example	2	met	-
+example	3	Fido	(1)
+example	4	over	-
+example	5	straat	(2)
+example	6	.	-
+
+example	0	Hij	(0)
+example	1	wilde	-
+example	2	oversteken	-
+example	3	maar	-
+example	4	de	(3
+example	5	hond	3)
+example	6	wilde	-
+example	7	niet	-
+example	8	.	-
+
+#end document
+```
 
 ## Train your own model
 To train a new model:
